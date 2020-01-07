@@ -1,0 +1,241 @@
+@name OpenControl/airbrake-control
+@inputs ControlStand:entity Pod:entity FullService BrakeCutout Independent_Apply Independent_Release Independent_Bail
+@outputs MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM
+@persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
+@persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local
+@persist SmoothTable:table
+@trigger 
+@model
+
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+    
+Compressor_CFM = 254 
+MainReservoirVolume = 33.8
+BrakePipingVolume = pi()*(0.0416667/2)*(0.0416667/2)
+Interval = 150
+
+LocomotiveBrakePipeVolume = MainReservoirVolume + BrakePipingVolume
+CompressorTime = ((((LocomotiveBrakePipeVolume * 140 - 0) / (14.7 * Compressor_CFM))*60)/Interval)
+  
+MainReservoir = 0
+EqualizingReservoir = 0  
+
+EqualizedHalfandHalf = 1
+BrakeCylinder = 65
+Discharging_EQ = 0
+MainCharging = 0    
+MainCharged = 0
+TopUpMainRes = 0
+Equalized = 0
+IndependentAFM_Local = 0
+AutomaticAFM_Local = 0
+
+timer("AutoAFM_Compare",500)
+timer("IndAFM_Compare",500)
+
+function number smooth(Var,SmoothAmount,ID:string,DefaultVal){
+    if(!SmoothTable:exists(ID)){
+        SmoothTable[ID,number] = DefaultVal
+    }
+    local Smooth = SmoothTable[ID,number]    
+    Smooth += (Var-Smooth) / SmoothAmount
+    SmoothTable[ID,number] = Smooth
+    return Smooth
+}
+}
+
+interval(150)
+
+if(Compressor){   
+    #local RoundedMR = round(MainReservoir)
+    #MainReservoir = RoundedMR
+    if(!PauseCOMP_EQing){
+        MainReservoir += (CompressorTime*EqualizedHalfandHalf)
+        
+        if(BrakeCutout>0){
+            if(!Discharging_EQ){
+                if(EqualizingReservoir<90){
+                    EqualizedHalfandHalf = 0.5
+                    EqualizingReservoir += (CompressorTime*EqualizedHalfandHalf)
+                }
+                
+                if(EqualizingReservoir>89 & EqualizingReservoir<90){
+                    EqualizedHalfandHalf = 1
+                }
+            }
+        }
+    }
+}
+#[
+if(BrakeCutout>0){
+    if(!Discharging_EQ){
+        if(MainReservoir>60){
+            if(EqualizingReservoir<90){
+                if(round(EqualizingReservoir)!=round(MainReservoir) & !Equalized){
+                    Equalized = 0
+                    PauseCOMP_EQing = 1
+                    MainReservoir -= 0.15
+                    EqualizingReservoir += 1
+                }
+                
+                if(round(EqualizingReservoir)==round(MainReservoir)){
+                    Equalized = 1
+                    PauseCOMP_EQing = 0
+                }
+            }
+        }
+    }
+}
+]#
+
+if(BrakeCutout>0){
+    if(!Discharging_EQ){
+        if(MainReservoir>90){
+            if(EqualizingReservoir<90){
+                if(round(EqualizingReservoir)!=round(MainReservoir)){
+                    PauseCOMP_EQing = 1
+                    MainReservoir -= 0.15
+                    EqualizingReservoir += 1
+                }
+                
+                if(round(EqualizingReservoir)==round(MainReservoir)){
+                    PauseCOMP_EQing = 0
+                }
+            }
+        }
+    }
+}
+
+if(BrakeCutout>0){
+BrakePipe = EqualizingReservoir
+}
+
+
+if(MainReservoir<140 & MainCharged == 0){
+    Compressor = 1
+    MainCharging = 1
+}
+
+if(changed(MainCharging & MainReservoir > 139 & MainReservoir < 140)&MainCharging & MainReservoir > 139 & MainReservoir < 140){
+    MainCharged = 1   
+}
+elseif(MainCharging & MainReservoir > 140){
+    MainReservoir = 140    
+    MainCharged = 1  
+}
+    
+if(changed(MainCharged) & MainCharged){
+    Compressor = 0    
+    TopUpMainRes = 1
+}
+   
+if(MainCharged & TopUpMainRes & MainReservoir < 130){
+    Compressor = 1
+}
+elseif(MainCharged & TopUpMainRes & MainReservoir == 130){
+    Compressor = 1
+}
+elseif(MainCharged & TopUpMainRes & MainReservoir > 139 & MainReservoir < 140){
+    Compressor = 0   
+}
+
+if(changed(MainCharged & TopUpMainRes)&MainCharged & TopUpMainRes){
+    
+    timer("airspitloss",1000)
+    
+}
+
+if(changed(clk("airspitloss"))&clk("airspitloss")){
+    if(!Compressor){
+        MainReservoir = (MainReservoir-0.08)
+    }
+    if(BrakeCutout==0 & BrakePipe>0){
+        BrakePipe = (BrakePipe-0.05)    
+    }
+    
+    timer("airspitloss",(random(1,4)*1000))
+}
+
+
+if(changed(round(EqualizingReservoir,0)==round(MainReservoir,0))&round(EqualizingReservoir,0)==round(MainReservoir,0)){
+    Equalized = 1
+}
+elseif(changed(round(EqualizingReservoir,0)!=round(MainReservoir,0))&round(EqualizingReservoir,0)!=round(MainReservoir,0)){
+    Equalized = 0
+}
+
+
+if(BrakeCutout>0){
+    if(FullService){
+        if(EqualizingReservoir>60){
+            Discharging_EQ = 1
+            
+            if(round(EqualizingReservoir)!=60){
+                EqualizingReservoir -= 0.45    
+            }
+        
+            if(round(EqualizingReservoir) == 60 & FullService){
+                EqualizingReservoir = EqualizingReservoir    
+            }
+        }
+    }
+    elseif(!FullService){
+        Discharging_EQ = 0   
+    }
+}
+
+
+if(Independent_Apply & BrakeCylinder<65){
+    BrakeCylinder += 5   
+}
+elseif(Independent_Release & BrakeCylinder>0){
+    BrakeCylinder -= 5    
+}
+elseif(Independent_Bail & BrakeCylinder>0){
+    BrakeCylinder -= 15    
+}
+
+if(MainReservoir<130){
+    PauseCOMP_EQing = 0    
+}
+
+if(AutoAFM == 0){
+    AutoAFMCapture = BrakePipe
+    timer("AutoAFM_Compare",500)
+    AutoAFM = 1
+}
+
+if(clk("AutoAFM_Compare")){
+    AutoAFMCapture2 = BrakePipe
+    AutomaticAFM_Local = abs((AutoAFMCapture2 - AutoAFMCapture))
+    AutoAFM = 0
+}
+
+if(IndAFM == 0){
+    IndAFMCapture = BrakeCylinder
+    timer("IndAFM_Compare",500)
+    IndAFM = 1
+}
+
+if(clk("IndAFM_Compare")){
+    IndAFMCapture2 = BrakeCylinder
+    IndependentAFM_Local = abs((IndAFMCapture2 - IndAFMCapture))
+    IndAFM = 0
+}
+
+BrakePipe = smooth((BrakePipe),15,"brakepipe-smoothing",0)
+IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
+AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
+
+if(changed(Compressor)&Compressor){
+soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_loop.wav")
+}
+elseif(changed(Compressor)&!Compressor){
+soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_end.wav")
+}
+
+
+
+
+

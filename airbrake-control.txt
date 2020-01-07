@@ -1,5 +1,5 @@
 @name OpenControl/airbrake-control
-@inputs ControlStand:entity Pod:entity FullService BrakeCutout Independent_Apply Independent_Release Independent_Bail
+@inputs BrakeNotch AutomaticPressureSet Suppression Emergency BrakeCutout Independent_Apply Independent_Release Independent_Bail
 @outputs MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local
@@ -167,20 +167,20 @@ elseif(changed(round(EqualizingReservoir,0)!=round(MainReservoir,0))&round(Equal
 
 
 if(BrakeCutout>0){
-    if(FullService){
-        if(EqualizingReservoir>60){
+    if(BrakeNotch>0){
+        if(EqualizingReservoir>AutomaticPressureSet){
             Discharging_EQ = 1
             
-            if(round(EqualizingReservoir)!=60){
-                EqualizingReservoir -= 0.45    
+            if(round(EqualizingReservoir)!=AutomaticPressureSet){
+                EqualizingReservoir -= Suppression ? 4 : 0.45    
             }
         
-            if(round(EqualizingReservoir) == 60 & FullService){
+            if(round(EqualizingReservoir) == AutomaticPressureSet & BrakeNotch>0){
                 EqualizingReservoir = EqualizingReservoir    
             }
         }
     }
-    elseif(!FullService){
+    elseif(BrakeNotch<1){
         Discharging_EQ = 0   
     }
 }
@@ -227,7 +227,7 @@ if(clk("IndAFM_Compare")){
 BrakePipe = smooth((BrakePipe),15,"brakepipe-smoothing",0)
 IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
 AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
-
+#[
 if(changed(Compressor)&Compressor){
 soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_loop.wav")
 }

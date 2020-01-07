@@ -1,8 +1,8 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity
-@outputs IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet
+@outputs IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency
 @persist Driver:entity
-@persist InServiceZone
+@persist InServiceZone LocalEmergency
 @persist 
 @trigger 
 @model
@@ -30,19 +30,17 @@ if(!InServiceZone){
     }
 }
 
-if(BrakeNotch == 2){ #service zone (un-notched)
+if(BrakeNotch == 2){
     InServiceZone = 1
-    
     if(IncreaseTrainBrake & ServiceZone<20){
-        ServiceZone += 5
+        ServiceZone += 1
     }
-    
     if(DecreaseTrainBrake & ServiceZone>0){
-        ServiceZone -= 5
+        ServiceZone -= 1
     }
 }
 
-if(ServiceZone==50){
+if(ServiceZone==20){
     InServiceZone = 0
 }
 elseif(ServiceZone==0){
@@ -50,27 +48,50 @@ elseif(ServiceZone==0){
 }
 
 switch(BrakeNotch){
-    case 0, #Relase
+    case 0,
         ControlStand:setBodygroup(4,0)
         AutomaticPressureSet = 90
+        Suppression = 0
     break
-    case 1, #Ini Red
+    case 1,
         ControlStand:setBodygroup(4,1)
         AutomaticPressureSet = 80
+        Suppression = 0
     break
-    case 2, #ServiceZone
-        ControlStand:setBodygroup(4,2+round((ServiceZone/10)))
+    case 2,
+        ControlStand:setBodygroup(4,2+round((ServiceZone*(50/20))/10))
         AutomaticPressureSet = 80-ServiceZone
+        Suppression = 0
     break
-    case 3, #Supp
+    case 3,
         ControlStand:setBodygroup(4,8)
+        if(!LocalEmergency){
+            Suppression = 1
+        }
     break
-    case 4, #Hand Off
+    case 4,
         ControlStand:setBodygroup(4,10)
+        Suppression = 0
     break
-    case 5, #Emrg
+    case 5,
         ControlStand:setBodygroup(4,11)
         AutomaticPressureSet = 0
+        LocalEmergency = 1
+        Suppression = 1
+        Emergency = 1
     break
 }
 
+
+if(changed(LocalEmergency & BrakeNotch<2)&LocalEmergency & BrakeNotch<2){
+    timer("emrgtimeout",60000)    
+}
+
+if(clk("emrgtimeout")){
+    LocalEmergency = 0
+    stoptimer("emrgtimeout")
+}
+
+if(LocalEmergency == 0 & BrakeNotch<2){
+    Emergency = 0
+}

@@ -1,6 +1,6 @@
 @name OpenControl/airbrake-control
-@inputs BrakeNotch AutomaticPressureSet Suppression Emergency BrakeCutout Independent_Apply Independent_Release Independent_Bail
-@outputs MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM
+@inputs [CONTROL_STAND_DATA]:array
+@outputs MainReservoir EqualizingReservoir BrakePipe AutomaticAFM IndependentAFM
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local
 @persist SmoothTable:table
@@ -22,7 +22,6 @@ MainReservoir = 0
 EqualizingReservoir = 0  
 
 EqualizedHalfandHalf = 1
-BrakeCylinder = 65
 Discharging_EQ = 0
 MainCharging = 0    
 MainCharged = 0
@@ -53,7 +52,7 @@ if(Compressor){
     if(!PauseCOMP_EQing){
         MainReservoir += (CompressorTime*EqualizedHalfandHalf)
         
-        if(BrakeCutout>0){
+        if(CONTROL_STAND_DATA[7,number]>0){
             if(!Discharging_EQ){
                 if(EqualizingReservoir<90){
                     EqualizedHalfandHalf = 0.5
@@ -68,7 +67,7 @@ if(Compressor){
     }
 }
 #[
-if(BrakeCutout>0){
+if(CONTROL_STAND_DATA[7,number]>0){
     if(!Discharging_EQ){
         if(MainReservoir>60){
             if(EqualizingReservoir<90){
@@ -89,7 +88,7 @@ if(BrakeCutout>0){
 }
 ]#
 
-if(BrakeCutout>0){
+if(CONTROL_STAND_DATA[7,number]>0){
     if(!Discharging_EQ){
         if(MainReservoir>90){
             if(EqualizingReservoir<90){
@@ -107,7 +106,7 @@ if(BrakeCutout>0){
     }
 }
 
-if(BrakeCutout>0){
+if(CONTROL_STAND_DATA[7,number]>0){
 BrakePipe = EqualizingReservoir
 }
 
@@ -150,7 +149,7 @@ if(changed(clk("airspitloss"))&clk("airspitloss")){
     if(!Compressor){
         MainReservoir = (MainReservoir-0.08)
     }
-    if(BrakeCutout==0 & BrakePipe>0){
+    if(CONTROL_STAND_DATA[7,number]==0 & BrakePipe>0){
         BrakePipe = (BrakePipe-0.05)    
     }
     
@@ -165,35 +164,23 @@ elseif(changed(round(EqualizingReservoir,0)!=round(MainReservoir,0))&round(Equal
     Equalized = 0
 }
 
-
-if(BrakeCutout>0){
-    if(BrakeNotch>0){
-        if(EqualizingReservoir>AutomaticPressureSet){
+if(CONTROL_STAND_DATA[7,number]>0){
+    if(CONTROL_STAND_DATA[3,number]>0){
+        if(EqualizingReservoir>CONTROL_STAND_DATA[4,number]){
             Discharging_EQ = 1
             
-            if(round(EqualizingReservoir)!=AutomaticPressureSet){
-                EqualizingReservoir -= Suppression ? 4 : 0.45    
+            if(round(EqualizingReservoir)!=CONTROL_STAND_DATA[4,number]){
+                EqualizingReservoir -= CONTROL_STAND_DATA[5,number] ? 4 : 0.45    
             }
         
-            if(round(EqualizingReservoir) == AutomaticPressureSet & BrakeNotch>0){
+            if(round(EqualizingReservoir) == CONTROL_STAND_DATA[4,number] & CONTROL_STAND_DATA[3,number]>0){
                 EqualizingReservoir = EqualizingReservoir    
             }
         }
     }
-    elseif(BrakeNotch<1){
+    elseif(CONTROL_STAND_DATA[3,number]<1){
         Discharging_EQ = 0   
     }
-}
-
-
-if(Independent_Apply & BrakeCylinder<65){
-    BrakeCylinder += 5   
-}
-elseif(Independent_Release & BrakeCylinder>0){
-    BrakeCylinder -= 5    
-}
-elseif(Independent_Bail & BrakeCylinder>0){
-    BrakeCylinder -= 15    
 }
 
 if(MainReservoir<130){
@@ -213,13 +200,13 @@ if(clk("AutoAFM_Compare")){
 }
 
 if(IndAFM == 0){
-    IndAFMCapture = BrakeCylinder
+    IndAFMCapture = CONTROL_STAND_DATA[8,number]
     timer("IndAFM_Compare",500)
     IndAFM = 1
 }
 
 if(clk("IndAFM_Compare")){
-    IndAFMCapture2 = BrakeCylinder
+    IndAFMCapture2 = CONTROL_STAND_DATA[8,number]
     IndependentAFM_Local = abs((IndAFMCapture2 - IndAFMCapture))
     IndAFM = 0
 }

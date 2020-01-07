@@ -1,16 +1,21 @@
 @name OpenControl/controlstand-aarlogic
-@inputs ControlStand:entity Pod:entity
-@outputs IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency
+@inputs ControlStand:entity Pod:entity BrakeCutout
+@outputs [CONTROL_STAND_DATA]:array
 @persist Driver:entity
-@persist InServiceZone LocalEmergency
+@persist InServiceZone LocalEmergency IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency BrakeCylinder
 @persist 
 @trigger 
 @model
 
+CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,BrakeCylinder)
+
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
-    
+
+BrakeCylinder = 65
+
 }
+
 runOnKeys(Driver,1) 
 interval(150)
 Driver = Pod:driver()
@@ -19,6 +24,22 @@ Shifting = Driver:keyPressed("lshift")
 
 IncreaseTrainBrake = Driver:keyPressed("w") & Shifting
 DecreaseTrainBrake = Driver:keyPressed("s") & Shifting
+
+Independent_Apply = Driver:keyPressed("rbracket") & Shifting
+Independent_Release = Driver:keyPressed("lbracket") & Shifting
+Independent_Bail = Driver:keyPressed("slash") & Shifting
+
+
+if(Independent_Apply & BrakeCylinder<65){
+    BrakeCylinder += 5   
+}
+elseif(Independent_Release & BrakeCylinder>0){
+    BrakeCylinder -= 5    
+}
+elseif(Independent_Bail & BrakeCylinder>0){
+    BrakeCylinder -= 15    
+}
+
 
 if(!InServiceZone){
     if(changed(IncreaseTrainBrake & BrakeNotch<5)&IncreaseTrainBrake & BrakeNotch<5){
@@ -72,6 +93,7 @@ switch(BrakeNotch){
     case 4,
         ControlStand:setBodygroup(4,10)
         Suppression = 0
+        AutomaticPressureSet = 0
     break
     case 5,
         ControlStand:setBodygroup(4,11)

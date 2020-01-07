@@ -29,6 +29,10 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
   * [ ] User Control
   * [ ] I/O
   * [ ] Control Stand
+    * [x] 26L Brake Control 
+      * [x] 60 sec PCS cutout
+      * [x] Brake Position Logic
+    * [ ] Communitcation between Control Stand and Main Chip
   * [ ] Configs
   
   

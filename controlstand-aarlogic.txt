@@ -1,18 +1,16 @@
 @name OpenControl/controlstand-aarlogic
-@inputs ControlStand:entity Pod:entity BrakeCutout
+@inputs ControlStand:entity Pod:entity BrakeCutout [LOCOMOTIVE_DATA]:array
 @outputs [CONTROL_STAND_DATA]:array
 @persist Driver:entity
-@persist InServiceZone LocalEmergency IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency BrakeCylinder
+@persist InServiceZone LocalEmergency IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Apply Independent_Release Independent_Bail
 @persist 
 @trigger 
 @model
 
-CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,BrakeCylinder)
+CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,Independent_Apply,Independent_Release,Independent_Bail)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
-
-BrakeCylinder = 65
 
 }
 
@@ -25,20 +23,9 @@ Shifting = Driver:keyPressed("lshift")
 IncreaseTrainBrake = Driver:keyPressed("w") & Shifting
 DecreaseTrainBrake = Driver:keyPressed("s") & Shifting
 
-Independent_Apply = Driver:keyPressed("rbracket") & Shifting
-Independent_Release = Driver:keyPressed("lbracket") & Shifting
-Independent_Bail = Driver:keyPressed("slash") & Shifting
-
-
-if(Independent_Apply & BrakeCylinder<65){
-    BrakeCylinder += 5   
-}
-elseif(Independent_Release & BrakeCylinder>0){
-    BrakeCylinder -= 5    
-}
-elseif(Independent_Bail & BrakeCylinder>0){
-    BrakeCylinder -= 15    
-}
+Independent_Apply = Driver:keyPressed("rbracket")
+Independent_Release = Driver:keyPressed("lbracket")
+Independent_Bail = Driver:keyPressed("slash")
 
 
 if(!InServiceZone){
@@ -102,6 +89,13 @@ switch(BrakeNotch){
         Suppression = 1
         Emergency = 1
     break
+}
+
+if(!Independent_Bail){
+ControlStand:setBodygroup(5,1+LOCOMOTIVE_DATA[4,number]/10)
+}
+elseif(Independent_Bail){
+ControlStand:setBodygroup(5,0)
 }
 
 

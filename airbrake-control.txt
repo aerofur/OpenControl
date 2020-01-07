@@ -1,11 +1,13 @@
 @name OpenControl/airbrake-control
 @inputs [CONTROL_STAND_DATA]:array
-@outputs MainReservoir EqualizingReservoir BrakePipe AutomaticAFM IndependentAFM
+@outputs [LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local
 @persist SmoothTable:table
 @trigger 
 @model
+
+LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -20,6 +22,7 @@ CompressorTime = ((((LocomotiveBrakePipeVolume * 140 - 0) / (14.7 * Compressor_C
   
 MainReservoir = 0
 EqualizingReservoir = 0  
+BrakeCylinder = 65
 
 EqualizedHalfandHalf = 1
 Discharging_EQ = 0
@@ -55,7 +58,7 @@ if(Compressor){
         if(CONTROL_STAND_DATA[7,number]>0){
             if(!Discharging_EQ){
                 if(EqualizingReservoir<90){
-                    EqualizedHalfandHalf = 0.5
+                    EqualizedHalfandHalf = 0.25
                     EqualizingReservoir += (CompressorTime*EqualizedHalfandHalf)
                 }
                 
@@ -66,6 +69,17 @@ if(Compressor){
         }
     }
 }
+
+if(CONTROL_STAND_DATA[8,number] & BrakeCylinder<65){
+    BrakeCylinder += 5   
+}
+elseif(CONTROL_STAND_DATA[9,number] & BrakeCylinder>0){
+    BrakeCylinder -= 5    
+}
+elseif(CONTROL_STAND_DATA[10,number] & BrakeCylinder>0){
+    BrakeCylinder -= 15    
+}
+
 #[
 if(CONTROL_STAND_DATA[7,number]>0){
     if(!Discharging_EQ){
@@ -94,8 +108,8 @@ if(CONTROL_STAND_DATA[7,number]>0){
             if(EqualizingReservoir<90){
                 if(round(EqualizingReservoir)!=round(MainReservoir)){
                     PauseCOMP_EQing = 1
-                    MainReservoir -= 0.15
-                    EqualizingReservoir += 1
+                    MainReservoir -= 0.1
+                    EqualizingReservoir += 0.5
                 }
                 
                 if(round(EqualizingReservoir)==round(MainReservoir)){
@@ -214,6 +228,7 @@ if(clk("IndAFM_Compare")){
 BrakePipe = smooth((BrakePipe),15,"brakepipe-smoothing",0)
 IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
 AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
+
 #[
 if(changed(Compressor)&Compressor){
 soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_loop.wav")
@@ -221,6 +236,7 @@ soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_loop.wav")
 elseif(changed(Compressor)&!Compressor){
 soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_end.wav")
 }
+
 
 
 

@@ -3,6 +3,7 @@
 @outputs [CONFIGURATION_DATA]:array
 @persist 
 @trigger none
+@model
 Controls = table()
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -74,6 +75,5 @@ if(first()){
     #For example consider a locomotive with a Selector Lever. Normally you'd press [IncreaseDynamics] to turn on the dynamic braking
     #With LeverBased mode, in order to turn on the dynamics you have to be in the "Off" selector notch and press [DecreaseTransition] to turn on the dynamics.
 
-
-
 }
+CONFIGURATION_DATA = array(Controls,Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)

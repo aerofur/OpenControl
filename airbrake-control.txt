@@ -1,11 +1,13 @@
 @name OpenControl/airbrake-control
 @inputs [CONTROL_STAND_DATA]:array
-@outputs [LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM
+@outputs [LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Discharging_EQ
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local
 @persist SmoothTable:table
 @trigger none
 @model
+
+LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -185,11 +187,27 @@ if(CONTROL_STAND_DATA[7,number]>0){
             Discharging_EQ = 1
             
             if(round(EqualizingReservoir)!=CONTROL_STAND_DATA[4,number]){
-                EqualizingReservoir -= CONTROL_STAND_DATA[5,number] ? 4 : 0.45    
+                if(EqualizingReservoir>CONTROL_STAND_DATA[4,number]){
+                    EqualizingReservoir -= (CONTROL_STAND_DATA[5,number] ? 4 : 0.45)
+                }
             }
         
             if(round(EqualizingReservoir) == CONTROL_STAND_DATA[4,number] & CONTROL_STAND_DATA[3,number]>0){
-                EqualizingReservoir = EqualizingReservoir    
+                EqualizingReservoir = EqualizingReservoir
+            }
+        }
+        if(EqualizingReservoir<CONTROL_STAND_DATA[4,number]){
+            Discharging_EQ = 1
+            
+            if(round(EqualizingReservoir)!=CONTROL_STAND_DATA[4,number]){
+                if(EqualizingReservoir<CONTROL_STAND_DATA[4,number]){
+                    EqualizingReservoir += (CONTROL_STAND_DATA[5,number] ? 4 : 0.45)
+                    MainReservoir -= (0.1)
+                }
+            }
+        
+            if(round(EqualizingReservoir) == CONTROL_STAND_DATA[4,number] & CONTROL_STAND_DATA[3,number]>0){
+                EqualizingReservoir = EqualizingReservoir
             }
         }
     }
@@ -229,8 +247,6 @@ if(clk("IndAFM_Compare")){
 BrakePipe = smooth((BrakePipe),15,"brakepipe-smoothing",0)
 IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
 AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
-
-LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM)
 
 #[
 if(changed(Compressor)&Compressor){

@@ -1,19 +1,16 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array
+@outputs [CONTROL_STAND_DATA]:array ServiceZone InServiceZone AutomaticPressureSet
 @persist Driver:entity Routing:table Controls:table Shift:string
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
 @persist HandBrake Sander
 @trigger none 
 @model
-
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail)
-
+Controls = CONFIGURATION_CONTROL_DATA
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
-    
-Controls = CONFIGURATION_CONTROL_DATA
 #CONFIGURATION_DATA = array(Controls,Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat
 #,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,
 #AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)
@@ -33,7 +30,7 @@ runOnKeys(Driver,1)
 interval(150)
 Driver = Pod:driver()
 
-if(keyClk(Driver)){
+#if(Driver!=noentity()){
     local Shifting = Driver:keyPressed(CONFIGURATION_DATA[2,string])
     UseButton = Driver:keyPressed(Controls["UseButton",string]) & (Routing["UseButton",number] ? Shifting : !Shifting)
     
@@ -47,15 +44,15 @@ if(keyClk(Driver)){
         IncreaseThrottle = Driver:keyPressed(Controls["IncreaseThrottle",string]) & (Routing["IncreaseThrottle",number] ? Shifting : !Shifting)
         DecreaseThrottle = Driver:keyPressed(Controls["DecreaseThrottle",string]) & (Routing["DecreaseThrottle",number] ? Shifting : !Shifting)
         
+        IncreaseDynamics = Driver:keyPressed(Controls["IncreaseDynamics",string]) & (Routing["IncreaseDynamics",number] ? Shifting : !Shifting)
+        DecreaseDynamics = Driver:keyPressed(Controls["DecreaseDynamics",string]) & (Routing["DecreaseDynamics",number] ? Shifting : !Shifting)
+        
         IncreaseTrainBrake = Driver:keyPressed(Controls["IncreaseTrainBrake",string]) & (Routing["IncreaseTrainBrake",number] ? Shifting : !Shifting)
-        IncreaseLocoBrake = Driver:keyPressed(Controls["DecreaseTrainBrake",string]) & (Routing["DecreaseTrainBrake",number] ? Shifting : !Shifting)
+        DecreaseTrainBrake = Driver:keyPressed(Controls["DecreaseTrainBrake",string]) & (Routing["DecreaseTrainBrake",number] ? Shifting : !Shifting)
         
         IncreaseLocoBrake = Driver:keyPressed(Controls["IncreaseLocoBrake",string]) & (Routing["IncreaseLocoBrake",number] ? Shifting : !Shifting)
         DecreaseLocoBrake = Driver:keyPressed(Controls["DecreaseLocoBrake",string]) & (Routing["DecreaseLocoBrake",number] ? Shifting : !Shifting)
         Independent_Bail = Driver:keyPressed(Controls["BailLocoBrake",string]) & (Routing["BailLocoBrake",number] ? Shifting : !Shifting)
-        
-        IncreaseDynamics = Driver:keyPressed(Controls["IncreaseDynamics",string]) & (Routing["IncreaseDynamics",number] ? Shifting : !Shifting)
-        DecreaseDynamics = Driver:keyPressed(Controls["DecreaseDynamics",string]) & (Routing["DecreaseDynamics",number] ? Shifting : !Shifting)
         
         HandBrake = Driver:keyPressed(Controls["HandBrake",string]) & (Routing["HandBrake",number] ? Shifting : !Shifting)
         Sander = Driver:keyPressed(Controls["Sander",string]) & (Routing["Sander",number] ? Shifting : !Shifting)
@@ -63,6 +60,10 @@ if(keyClk(Driver)){
         SelectorUp = Driver:keyPressed(Controls["SelectorUp",string]) & (Routing["SelectorUp",number] ? Shifting : !Shifting)
         SelectorDown = Driver:keyPressed(Controls["SelectorDown",string]) & (Routing["SelectorDown",number] ? Shifting : !Shifting)
     }
+#}
+
+if(ServiceZone==20 & DecreaseTrainBrake & BrakeNotch == 2){
+    InServiceZone = 1
 }
 
 if(!InServiceZone){
@@ -77,6 +78,7 @@ if(!InServiceZone){
 
 if(BrakeNotch == 2){
     InServiceZone = 1
+       
     if(IncreaseTrainBrake & ServiceZone<20){
         ServiceZone += 1
     }

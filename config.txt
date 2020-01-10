@@ -1,0 +1,79 @@
+@name OpenControl/config
+@inputs 
+@outputs [CONFIGURATION_DATA]:array
+@persist 
+@trigger none
+Controls = table()
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+
+    # --// Control Stand //--
+    
+    #Reverser
+    ReverserF = ""
+    ReverserN = ""
+    ReverserR = ""
+    
+    #Throttle (Notch)
+    ThrottleAdvance = ""
+    ThrottleRetreat = ""
+    
+    #Dynamic (DynoNotch)
+    DynamicThrottleAdvance = ""
+    DynamicThrottleRetreat = ""
+    
+    # --// Air Brakes //--
+    
+    #Air Compressor
+    Compressor_CFM = 254 
+    MainReservoirVolume = 33.8
+    CompressorStart = ""
+    CompressorShutdown = ""
+    
+    #Automatic Air Brake
+    AutomaticApply = ""
+    AutomaticRelease = ""
+    AutomaticEmergency = ""
+    AutomaticEmergencyRelease = ""
+    
+    #Independent Air Brake
+    IndependentApply = ""
+    IndependentRelease = ""
+    IndependentBailOn = ""
+    IndependentBailOff = ""
+
+    # --// Controls //--
+
+    Shift = "lshift" #When pressing this key, all controls with "+Shift" next to them will be triggered, and all the other will be ignored.
+    
+    Controls["ReverserF",string] = "W"
+    Controls["ReverserB",string] = "S"
+    
+    Controls["IncreaseThrottle",string] = "D"
+    Controls["DecreaseThrottle",string] = "A"
+    
+    Controls["IncreaseDynamics",string] = "right"
+    Controls["DecreaseDynamics",string] = "left"
+    
+    Controls["SelectorUp",string] = "rbracket +Shift"
+    Controls["SelectorDown",string] = "lbracket +Shift"
+    
+    Controls["IncreaseTrainBrake",string] = "W +Shift"
+    Controls["DecreaseTrainBrake",string] = "S +Shift"
+    
+    Controls["IncreaseLocoBrake",string] = "rbracket"
+    Controls["DecreaseLocoBrake",string] = "lbracket"
+    
+    Controls["HandBrake",string] = "H"
+    Controls["Sander",string] = "period"
+    
+    Controls["UseButton",string] = "mouse_left"
+    
+    LeverBased = 0 #0 for Control-Based, 1 for Lever-Based
+    #When available, this enables the Lever-Based Control mode. This means that the key controls the LEVER, not the CONTROL.
+    #For example consider a locomotive with a Selector Lever. Normally you'd press [IncreaseDynamics] to turn on the dynamic braking
+    #With LeverBased mode, in order to turn on the dynamics you have to be in the "Off" selector notch and press [DecreaseTransition] to turn on the dynamics.
+
+
+
+}

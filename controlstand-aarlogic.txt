@@ -1,10 +1,10 @@
 @name OpenControl/controlstand-aarlogic
-@inputs ControlStand:entity Pod:entity BrakeCutout [LOCOMOTIVE_DATA]:array
+@inputs ControlStand:entity Pod:entity BrakeCutout [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array
 @outputs [CONTROL_STAND_DATA]:array
 @persist Driver:entity
 @persist InServiceZone LocalEmergency IncreaseTrainBrake DecreaseTrainBrake BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Apply Independent_Release Independent_Bail
 @persist 
-@trigger 
+@trigger none 
 @model
 
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,Independent_Apply,Independent_Release,Independent_Bail)
@@ -16,6 +16,8 @@ if(first()){
 
 runOnKeys(Driver,1) 
 interval(150)
+
+
 Driver = Pod:driver()
 
 Shifting = Driver:keyPressed("lshift")
@@ -96,6 +98,13 @@ ControlStand:setBodygroup(5,1+LOCOMOTIVE_DATA[4,number]/10)
 }
 elseif(Independent_Bail){
 ControlStand:setBodygroup(5,0)
+}
+
+if(changed(Independent_Bail)&Independent_Bail){
+    soundPlay("indbailoff",0,"opencontrol/airbrakes/sa26/bail_off2.wav")
+}
+elseif(changed(Independent_Bail)&!Independent_Bail){
+    soundPlay("indbailon",0,"opencontrol/airbrakes/sa26/bail_on2.wav")    
 }
 
 

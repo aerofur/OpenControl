@@ -1,6 +1,6 @@
 @name OpenControl/config
 @inputs 
-@outputs [CONFIGURATION_DATA]:array
+@outputs [CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA]:table
 @persist 
 @trigger none
 @model
@@ -64,6 +64,7 @@ if(first()){
     
     Controls["IncreaseLocoBrake",string] = "rbracket"
     Controls["DecreaseLocoBrake",string] = "lbracket"
+    Controls["BailLocoBrake",string] = "slash"
     
     Controls["HandBrake",string] = "H"
     Controls["Sander",string] = "period"
@@ -76,4 +77,5 @@ if(first()){
     #With LeverBased mode, in order to turn on the dynamics you have to be in the "Off" selector notch and press [DecreaseTransition] to turn on the dynamics.
 
 }
-CONFIGURATION_DATA = array(Controls,Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)
+CONFIGURATION_DATA = array(Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)
+CONFIGURATION_CONTROL_DATA = Controls

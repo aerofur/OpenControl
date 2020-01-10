@@ -30,7 +30,7 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
   * [ ] User Control
   * [ ] I/O
     * [ ] MU Hose Functionality
-      Convert automatic MU E2 to automatic air hose E2
+      * Convert automatic MU E2 to automatic air hose E2
   * [ ] Control Stand
     * [x] 26L Brake Control 
       * [x] 60 sec PCS cutout

@@ -20,7 +20,7 @@ Interval = 150
 LocomotiveBrakePipeVolume = MainReservoirVolume + BrakePipingVolume
 CompressorTime = ((((LocomotiveBrakePipeVolume * 140 - 0) / (14.7 * Compressor_CFM))*60)/Interval)
   
-MainReservoir = 0
+MainReservoir = 140
 EqualizingReservoir = 0  
 BrakeCylinder = 65
 
@@ -77,10 +77,19 @@ elseif(CONTROL_STAND_DATA[9,number] & BrakeCylinder>0){
     BrakeCylinder -= 2    
 }
 elseif(CONTROL_STAND_DATA[10,number] & BrakeCylinder>0){
-    BrakeCylinder -= 15    
+    BrakeCylinder -= 10   
 }
+
+if(Discharging_EQ){
+    if(changed(EqualizingReservoir)){
+        if(BrakeCylinder<65){
+            BrakeCylinder += 0.25
+        }
+    }
+}
+
 if(changed(BrakeCylinder<0)&BrakeCylinder<0){
-BrakeCylinder = 0    
+    BrakeCylinder = 0    
 }
 
 #[
@@ -249,6 +258,7 @@ IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
 AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
 
 #[
+
 if(changed(Compressor)&Compressor){
 soundPlay("comp",0,"gsgtrainsounds/misc/compressors/gd_wbo_sd50_loop.wav")
 }

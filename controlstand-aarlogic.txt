@@ -1,16 +1,24 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array ServiceZone InServiceZone AutomaticPressureSet
+@outputs [CONTROL_STAND_DATA]:array ServiceZone InServiceZone AutomaticPressureSet EmergRelease
 @persist Driver:entity Routing:table Controls:table Shift:string
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
-@persist HandBrake Sander
+@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS
 @trigger none 
 @model
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail)
-Controls = CONFIGURATION_CONTROL_DATA
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
+Controls = CONFIGURATION_CONTROL_DATA 
+
+ServiceHiss = 1
+ServiceRelease = 1
+IndHiss = 1
+IndRelease = 1
+EmergRelease = 0
+LocoBrakePOS = LOCOMOTIVE_DATA[4,number]
+
 #CONFIGURATION_DATA = array(Controls,Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat
 #,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,
 #AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)
@@ -25,12 +33,11 @@ foreach(K,V:string = Controls){
     }
 }
 }
-
 runOnKeys(Driver,1) 
 interval(150)
 Driver = Pod:driver()
 
-#if(Driver!=noentity()){
+if(Driver!=noentity()){
     local Shifting = Driver:keyPressed(CONFIGURATION_DATA[2,string])
     UseButton = Driver:keyPressed(Controls["UseButton",string]) & (Routing["UseButton",number] ? Shifting : !Shifting)
     
@@ -60,7 +67,7 @@ Driver = Pod:driver()
         SelectorUp = Driver:keyPressed(Controls["SelectorUp",string]) & (Routing["SelectorUp",number] ? Shifting : !Shifting)
         SelectorDown = Driver:keyPressed(Controls["SelectorDown",string]) & (Routing["SelectorDown",number] ? Shifting : !Shifting)
     }
-#}
+}
 
 if(ServiceZone==20 & DecreaseTrainBrake & BrakeNotch == 2){
     InServiceZone = 1
@@ -119,7 +126,9 @@ switch(BrakeNotch){
     case 4,
         ControlStand:setBodygroup(4,10)
         Suppression = 0
+        if(BrakeCutout<1){
         AutomaticPressureSet = 0
+        }
     break
     case 5,
         ControlStand:setBodygroup(4,11)
@@ -130,18 +139,106 @@ switch(BrakeNotch){
     break
 }
 
+if(IncreaseLocoBrake & LocoBrakePOS<65){
+    LocoBrakePOS += 2   
+}
+elseif(DecreaseLocoBrake & LocoBrakePOS>0){
+    LocoBrakePOS -= 2    
+}
+
 if(!Independent_Bail){
-ControlStand:setBodygroup(5,1+LOCOMOTIVE_DATA[4,number]/10)
+    ControlStand:setBodygroup(5,1+LocoBrakePOS/10)
 }
 elseif(Independent_Bail){
-ControlStand:setBodygroup(5,0)
+    ControlStand:setBodygroup(5,0)
+    if(LocoBrakePOS>LOCOMOTIVE_DATA[4,number]){
+        LocoBrakePOS = LOCOMOTIVE_DATA[4,number]
+    }
+}
+
+if(BrakeCutout>0){ 
+    if(!Emergency){
+        
+        if(ServiceHiss){
+            if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
+                soundPlay("servicehiss",0,CONFIGURATION_DATA[14,string])
+                soundStop("servicerelease",1)
+                timer("servicehissRLA",7000)
+                ServiceHiss = 0
+            }
+        }
+        if(changed(clk("servicehissRLA"))&clk("servicehissRLA")){
+            ServiceHiss = 1 
+            stoptimer("servicehissRLA")
+        }
+
+        if(ServiceRelease){
+            if(changed(BrakeNotch & DecreaseTrainBrake)&BrakeNotch & DecreaseTrainBrake){
+                soundPlay("servicerelease",0,CONFIGURATION_DATA[15,string])
+                soundStop("servicehiss",1)
+                timer("servicehissRLB",7000)
+                ServiceRelease = 0
+            }
+        }
+        if(changed(clk("servicehissRLB"))&clk("servicehissRLB")){
+            ServiceRelease = 1
+            stoptimer("servicehissRLB")
+        }
+    }
+    elseif(Emergency){
+        if(changed(Emergency)&Emergency){
+            soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
+            EmergRelease = 2
+        }    
+    }
+
+    if(EmergRelease == 2){
+        if(changed(BrakeNotch<5)&BrakeNotch<5){
+            EmergRelease = 1
+        }
+    }
+    
+    if(changed(EmergRelease)&EmergRelease){
+        soundPlay("emrgrelease",0,CONFIGURATION_DATA[17,string])
+    } 
 }
 
 if(changed(Independent_Bail)&Independent_Bail){
-    soundPlay("indbailoff",0,"opencontrol/airbrakes/sa26/bail_off2.wav")
+    soundPlay("indbailoff",0,CONFIGURATION_DATA[20,string])
 }
 elseif(changed(Independent_Bail)&!Independent_Bail){
-    soundPlay("indbailon",0,"opencontrol/airbrakes/sa26/bail_on2.wav")    
+    soundPlay("indbailon",0,CONFIGURATION_DATA[21,string])    
+}
+
+if(!Independent_Bail){
+    if(LOCOMOTIVE_DATA[4,number]<65){
+        if(IndHiss){
+            if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
+                soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
+                soundStop("indrelease",1)
+                timer("indhissRLA",1000)
+                IndHiss = 0
+            }
+        }
+        if(changed(clk("indhissRLA"))&clk("indhissRLA")){
+            IndHiss = 1 
+            stoptimer("indhissRLA")
+        }
+    }
+    if(LOCOMOTIVE_DATA[4,number]>0){ 
+        if(IndRelease){
+            if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
+                soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
+                soundStop("indhiss",1)
+                timer("indhissRLB",1000)
+                IndRelease = 0
+            }
+        }
+        if(changed(clk("indhissRLB"))&clk("indhissRLB")){
+            IndRelease = 1
+            stoptimer("indhissRLB")
+        }
+    }
 }
 
 

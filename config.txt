@@ -32,16 +32,16 @@ if(first()){
     CompressorShutdown = ""
     
     #Automatic Air Brake
-    AutomaticApply = ""
-    AutomaticRelease = ""
-    AutomaticEmergency = ""
-    AutomaticEmergencyRelease = ""
+    AutomaticApply = "opencontrol/airbrakes/26c/apply.wav"
+    AutomaticRelease = "opencontrol/airbrakes/26c/release.wav"
+    AutomaticEmergency = "opencontrol/airbrakes/26c/emergency_apply.wav"
+    AutomaticEmergencyRelease = "opencontrol/airbrakes/26c/emergency_release.wav"
     
     #Independent Air Brake
-    IndependentApply = ""
-    IndependentRelease = ""
-    IndependentBailOn = ""
-    IndependentBailOff = ""
+    IndependentApply = "opencontrol/airbrakes/sa26/apply.wav"
+    IndependentRelease = "opencontrol/airbrakes/sa26/release.wav"
+    IndependentBailOn = "opencontrol/airbrakes/sa26/bail_off2.wav"
+    IndependentBailOff = "opencontrol/airbrakes/sa26/bail_on2.wav"
 
     # --// Controls //--
 

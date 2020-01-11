@@ -1,8 +1,8 @@
 @name OpenControl/airbrake-control
-@inputs [CONTROL_STAND_DATA]:array
+@inputs [CONTROL_STAND_DATA CONFIGURATION_DATA]:array
 @outputs [LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Discharging_EQ
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
-@persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local
+@persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local IndNotch
 @persist SmoothTable:table
 @trigger none
 @model
@@ -32,6 +32,7 @@ TopUpMainRes = 0
 Equalized = 0
 IndependentAFM_Local = 0
 AutomaticAFM_Local = 0
+IndNotch = 0
 
 timer("AutoAFM_Compare",500)
 timer("IndAFM_Compare",500)
@@ -70,14 +71,37 @@ if(Compressor){
     }
 }
 
-if(CONTROL_STAND_DATA[8,number] & BrakeCylinder<65){
-    BrakeCylinder += 2   
+if(CONFIGURATION_DATA[23,number] == 0){
+    if(CONTROL_STAND_DATA[8,number] & BrakeCylinder<65){
+        BrakeCylinder += 2   
+    }
+    elseif(CONTROL_STAND_DATA[9,number] & BrakeCylinder>0){
+        BrakeCylinder -= 2    
+    }
+    elseif(CONTROL_STAND_DATA[10,number] & BrakeCylinder>0){
+        BrakeCylinder -= 10   
+    }
 }
-elseif(CONTROL_STAND_DATA[9,number] & BrakeCylinder>0){
-    BrakeCylinder -= 2    
-}
-elseif(CONTROL_STAND_DATA[10,number] & BrakeCylinder>0){
-    BrakeCylinder -= 10   
+elseif(CONFIGURATION_DATA[23,number] == 1){
+    if(changed(CONTROL_STAND_DATA[8,number] & IndNotch<2)&CONTROL_STAND_DATA[8,number] & IndNotch<2){
+        IndNotch += 1
+    }
+    elseif(changed(CONTROL_STAND_DATA[9,number] & IndNotch>0)&CONTROL_STAND_DATA[9,number] & IndNotch>0){
+        IndNotch -= 1
+    }
+
+    if(BrakeCylinder<65 & IndNotch == 2){
+        BrakeCylinder += 2   
+    }
+    elseif(BrakeCylinder<65 & IndNotch == 1){
+        BrakeCylinder = BrakeCylinder  
+    }
+    elseif(BrakeCylinder>0 & IndNotch == 0){
+        BrakeCylinder -= 2   
+    }
+    elseif(CONTROL_STAND_DATA[10,number] & BrakeCylinder>0){
+        BrakeCylinder -= 10   
+    }
 }
 
 if(Discharging_EQ){

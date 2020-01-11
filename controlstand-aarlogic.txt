@@ -69,12 +69,41 @@ if(Driver!=noentity()){
     }
 }
 
-if(ServiceZone==20 & DecreaseTrainBrake & BrakeNotch == 2){
-    InServiceZone = 1
-}
+if(CONFIGURATION_DATA[22,number]<2){
+    if(ServiceZone==20 & DecreaseTrainBrake & BrakeNotch == 2){
+        InServiceZone = 1
+    }
 
-if(!InServiceZone){
-    if(changed(IncreaseTrainBrake & BrakeNotch<5)&IncreaseTrainBrake & BrakeNotch<5){
+    if(!InServiceZone){
+        if(changed(IncreaseTrainBrake & BrakeNotch<5)&IncreaseTrainBrake & BrakeNotch<5){
+            BrakeNotch += 1    
+        }
+        
+        if(changed(DecreaseTrainBrake & BrakeNotch>0)&DecreaseTrainBrake & BrakeNotch>0){
+            BrakeNotch -= 1   
+        }
+    }
+
+    if(BrakeNotch == 2){
+        InServiceZone = 1
+        
+        if(IncreaseTrainBrake & ServiceZone<20){
+            ServiceZone += 1
+        }
+        if(DecreaseTrainBrake & ServiceZone>0){
+            ServiceZone -= 1
+        }
+    }
+
+    if(ServiceZone==20){
+        InServiceZone = 0
+    }
+    elseif(ServiceZone==0){
+        InServiceZone = 0
+    }
+}
+elseif(CONFIGURATION_DATA[22,number] == 2){
+    if(changed(IncreaseTrainBrake & BrakeNotch<4)&IncreaseTrainBrake & BrakeNotch<4){
         BrakeNotch += 1    
     }
     
@@ -83,60 +112,75 @@ if(!InServiceZone){
     }
 }
 
-if(BrakeNotch == 2){
-    InServiceZone = 1
-       
-    if(IncreaseTrainBrake & ServiceZone<20){
-        ServiceZone += 1
-    }
-    if(DecreaseTrainBrake & ServiceZone>0){
-        ServiceZone -= 1
-    }
-}
-
-if(ServiceZone==20){
-    InServiceZone = 0
-}
-elseif(ServiceZone==0){
-    InServiceZone = 0
-}
-
-switch(BrakeNotch){
-    case 0,
-        ControlStand:setBodygroup(4,0)
-        AutomaticPressureSet = 90
-        Suppression = 0
-    break
-    case 1,
-        ControlStand:setBodygroup(4,1)
-        AutomaticPressureSet = 80
-        Suppression = 0
-    break
-    case 2,
-        ControlStand:setBodygroup(4,2+round((ServiceZone*(50/20))/10))
-        AutomaticPressureSet = 80-ServiceZone
-        Suppression = 0
-    break
-    case 3,
-        ControlStand:setBodygroup(4,8)
-        if(!LocalEmergency){
+if(CONFIGURATION_DATA[22,number]<2){
+    switch(BrakeNotch){
+        case 0,
+            ControlStand:setBodygroup(4,0)
+            AutomaticPressureSet = 90
+            Suppression = 0
+        break
+        case 1,
+            ControlStand:setBodygroup(4,1)
+            AutomaticPressureSet = 80
+            Suppression = 0
+        break
+        case 2,
+            ControlStand:setBodygroup(4,2+round((ServiceZone*(50/20))/10))
+            AutomaticPressureSet = 80-ServiceZone
+            Suppression = 0
+        break
+        case 3,
+            ControlStand:setBodygroup(4,8)
+            if(!LocalEmergency){
+                Suppression = 1
+            }
+        break
+        case 4,
+            ControlStand:setBodygroup(4,10)
+            Suppression = 0
+            if(BrakeCutout<1){
+            AutomaticPressureSet = 0
+            }
+        break
+        case 5,
+            ControlStand:setBodygroup(4,11)
+            AutomaticPressureSet = 0
+            LocalEmergency = 1
             Suppression = 1
-        }
-    break
-    case 4,
-        ControlStand:setBodygroup(4,10)
-        Suppression = 0
-        if(BrakeCutout<1){
-        AutomaticPressureSet = 0
-        }
-    break
-    case 5,
-        ControlStand:setBodygroup(4,11)
-        AutomaticPressureSet = 0
-        LocalEmergency = 1
-        Suppression = 1
-        Emergency = 1
-    break
+            Emergency = 1
+        break
+    }
+}
+elseif(CONFIGURATION_DATA[22,number] == 2){
+    switch(BrakeNotch){
+        case 0,
+            ControlStand:setBodygroup(4,0)
+            AutomaticPressureSet = 90
+            Suppression = 0
+        break
+        case 1,
+            ControlStand:setBodygroup(4,1)
+            AutomaticPressureSet = AutomaticPressureSet
+            Suppression = 0
+        break
+        case 2,
+            ControlStand:setBodygroup(4,2)
+            AutomaticPressureSet = AutomaticPressureSet
+            Suppression = 0
+        break
+        case 3,
+            ControlStand:setBodygroup(4,8)
+            AutomaticPressureSet = 60
+            Suppression = 0
+        break
+        case 4,
+            ControlStand:setBodygroup(4,11)
+            AutomaticPressureSet = 0
+            LocalEmergency = 1
+            Suppression = 1
+            Emergency = 1
+        break
+    }
 }
 
 if(IncreaseLocoBrake & LocoBrakePOS<65){
@@ -156,51 +200,101 @@ elseif(Independent_Bail){
     }
 }
 
-if(BrakeCutout>0){ 
-    if(!Emergency){
+if(CONFIGURATION_DATA[22,number]<2){
+    if(BrakeCutout>0){ 
+        if(!Emergency){
+            
+            if(ServiceHiss){
+                if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
+                    soundPlay("servicehiss",0,CONFIGURATION_DATA[14,string])
+                    soundStop("servicerelease",1)
+                    timer("servicehissRLA",7000)
+                    ServiceHiss = 0
+                }
+            }
+            if(changed(clk("servicehissRLA"))&clk("servicehissRLA")){
+                ServiceHiss = 1 
+                stoptimer("servicehissRLA")
+            }
+
+            if(ServiceRelease){
+                if(changed(BrakeNotch & DecreaseTrainBrake)&BrakeNotch & DecreaseTrainBrake){
+                    soundPlay("servicerelease",0,CONFIGURATION_DATA[15,string])
+                    soundStop("servicehiss",1)
+                    timer("servicehissRLB",7000)
+                    ServiceRelease = 0
+                }
+            }
+            if(changed(clk("servicehissRLB"))&clk("servicehissRLB")){
+                ServiceRelease = 1
+                stoptimer("servicehissRLB")
+            }
+        }
+        elseif(Emergency){
+            if(changed(Emergency)&Emergency){
+                soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
+                EmergRelease = 2
+            }    
+        }
+
+        if(EmergRelease == 2){
+            if(changed(BrakeNotch<5)&BrakeNotch<5){
+                EmergRelease = 1
+            }
+        }
         
-        if(ServiceHiss){
-            if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
-                soundPlay("servicehiss",0,CONFIGURATION_DATA[14,string])
-                soundStop("servicerelease",1)
-                timer("servicehissRLA",7000)
-                ServiceHiss = 0
+        if(changed(EmergRelease)&EmergRelease){
+            soundPlay("emrgrelease",0,CONFIGURATION_DATA[17,string])
+        } 
+    }
+}
+elseif(CONFIGURATION_DATA[22,number] == 2){
+    if(BrakeCutout>0){ 
+        if(!Emergency){
+            
+            if(ServiceHiss){
+                if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
+                    soundPlay("servicehiss",0,CONFIGURATION_DATA[14,string])
+                    soundStop("servicerelease",1)
+                    timer("servicehissRLA",7000)
+                    ServiceHiss = 0
+                }
+            }
+            if(changed(clk("servicehissRLA"))&clk("servicehissRLA")){
+                ServiceHiss = 1 
+                stoptimer("servicehissRLA")
+            }
+
+            if(ServiceRelease){
+                if(changed(BrakeNotch & DecreaseTrainBrake)&BrakeNotch & DecreaseTrainBrake){
+                    soundPlay("servicerelease",0,CONFIGURATION_DATA[15,string])
+                    soundStop("servicehiss",1)
+                    timer("servicehissRLB",7000)
+                    ServiceRelease = 0
+                }
+            }
+            if(changed(clk("servicehissRLB"))&clk("servicehissRLB")){
+                ServiceRelease = 1
+                stoptimer("servicehissRLB")
             }
         }
-        if(changed(clk("servicehissRLA"))&clk("servicehissRLA")){
-            ServiceHiss = 1 
-            stoptimer("servicehissRLA")
+        elseif(Emergency){
+            if(changed(Emergency)&Emergency){
+                soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
+                EmergRelease = 2
+            }    
         }
 
-        if(ServiceRelease){
-            if(changed(BrakeNotch & DecreaseTrainBrake)&BrakeNotch & DecreaseTrainBrake){
-                soundPlay("servicerelease",0,CONFIGURATION_DATA[15,string])
-                soundStop("servicehiss",1)
-                timer("servicehissRLB",7000)
-                ServiceRelease = 0
+        if(EmergRelease == 2){
+            if(changed(BrakeNotch<4)&BrakeNotch<4){
+                EmergRelease = 1
             }
         }
-        if(changed(clk("servicehissRLB"))&clk("servicehissRLB")){
-            ServiceRelease = 1
-            stoptimer("servicehissRLB")
-        }
+        
+        if(changed(EmergRelease)&EmergRelease){
+            soundPlay("emrgrelease",0,CONFIGURATION_DATA[17,string])
+        } 
     }
-    elseif(Emergency){
-        if(changed(Emergency)&Emergency){
-            soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
-            EmergRelease = 2
-        }    
-    }
-
-    if(EmergRelease == 2){
-        if(changed(BrakeNotch<5)&BrakeNotch<5){
-            EmergRelease = 1
-        }
-    }
-    
-    if(changed(EmergRelease)&EmergRelease){
-        soundPlay("emrgrelease",0,CONFIGURATION_DATA[17,string])
-    } 
 }
 
 if(changed(Independent_Bail)&Independent_Bail){
@@ -210,36 +304,71 @@ elseif(changed(Independent_Bail)&!Independent_Bail){
     soundPlay("indbailon",0,CONFIGURATION_DATA[21,string])    
 }
 
-if(!Independent_Bail){
-    if(LOCOMOTIVE_DATA[4,number]<65){
-        if(IndHiss){
-            if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
-                soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
-                soundStop("indrelease",1)
-                timer("indhissRLA",1000)
-                IndHiss = 0
+if(CONFIGURATION_DATA[23,number] == 0){
+    if(!Independent_Bail){
+        if(LOCOMOTIVE_DATA[4,number]<65){
+            if(IndHiss){
+                if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
+                    soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
+                    soundStop("indrelease",1)
+                    timer("indhissRLA",1000)
+                    IndHiss = 0
+                }
+            }
+            if(changed(clk("indhissRLA"))&clk("indhissRLA")){
+                IndHiss = 1 
+                stoptimer("indhissRLA")
             }
         }
-        if(changed(clk("indhissRLA"))&clk("indhissRLA")){
-            IndHiss = 1 
-            stoptimer("indhissRLA")
-        }
-    }
-    if(LOCOMOTIVE_DATA[4,number]>0){ 
-        if(IndRelease){
-            if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
-                soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
-                soundStop("indhiss",1)
-                timer("indhissRLB",1000)
-                IndRelease = 0
+        if(LOCOMOTIVE_DATA[4,number]>0){ 
+            if(IndRelease){
+                if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
+                    soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
+                    soundStop("indhiss",1)
+                    timer("indhissRLB",1000)
+                    IndRelease = 0
+                }
             }
-        }
-        if(changed(clk("indhissRLB"))&clk("indhissRLB")){
-            IndRelease = 1
-            stoptimer("indhissRLB")
+            if(changed(clk("indhissRLB"))&clk("indhissRLB")){
+                IndRelease = 1
+                stoptimer("indhissRLB")
+            }
         }
     }
 }
+elseif(CONFIGURATION_DATA[23,number] == 1){
+    if(!Independent_Bail){
+        if(LOCOMOTIVE_DATA[4,number]<65){
+            if(IndHiss){
+                if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
+                    soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
+                    soundStop("indrelease",1)
+                    timer("indhissRLA",1000)
+                    IndHiss = 0
+                }
+            }
+            if(changed(clk("indhissRLA"))&clk("indhissRLA")){
+                IndHiss = 1 
+                stoptimer("indhissRLA")
+            }
+        }
+        if(LOCOMOTIVE_DATA[4,number]>0){ 
+            if(IndRelease){
+                if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
+                    soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
+                    soundStop("indhiss",1)
+                    timer("indhissRLB",1000)
+                    IndRelease = 0
+                }
+            }
+            if(changed(clk("indhissRLB"))&clk("indhissRLB")){
+                IndRelease = 1
+                stoptimer("indhissRLB")
+            }
+        }
+    }
+}
+
 
 
 if(changed(LocalEmergency & BrakeNotch<2)&LocalEmergency & BrakeNotch<2){

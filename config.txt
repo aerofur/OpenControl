@@ -30,6 +30,12 @@ if(first()){
     MainReservoirVolume = 33.8
     CompressorStart = ""
     CompressorShutdown = ""
+
+    #Automatic Brake Type
+    AutomaticBrakeType = 0
+    #0 = Westinghouse 26L
+    #1 = Westinghouse 26C
+    #2 = Westinghouse No. 6
     
     #Automatic Air Brake
     AutomaticApply = "opencontrol/airbrakes/26c/apply.wav"
@@ -37,6 +43,11 @@ if(first()){
     AutomaticEmergency = "opencontrol/airbrakes/26c/emergency_apply.wav"
     AutomaticEmergencyRelease = "opencontrol/airbrakes/26c/emergency_release.wav"
     
+    #Independent Brake Type
+    IndependentBrakeType = 0
+    #0 = Westinghouse SA26
+    #1 = Westinghouse S40F
+
     #Independent Air Brake
     IndependentApply = "opencontrol/airbrakes/sa26/apply.wav"
     IndependentRelease = "opencontrol/airbrakes/sa26/release.wav"
@@ -77,5 +88,5 @@ if(first()){
     #With LeverBased mode, in order to turn on the dynamics you have to be in the "Off" selector notch and press [DecreaseTransition] to turn on the dynamics.
 
 }
-CONFIGURATION_DATA = array(Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)
+CONFIGURATION_DATA = array(Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,AutomaticBrakeType,IndependentBrakeType)
 CONFIGURATION_CONTROL_DATA = Controls

@@ -25,9 +25,12 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
     * [x] Equalising Reservoir ~ Brake Pipe - Pump Logic
     * [ ] Brake Type Settings (26L / 26C / 6SL / etc)
   * [ ] Traction System
-  * [ ] Physics System
+    * [ ] Generator Transition
+  * [x] Physics System
   * [ ] User Control
   * [ ] I/O
+    * [ ] MU Hose Functionality
+      * Convert automatic MU E2 to automatic air hose E2
   * [ ] Control Stand
     * [x] 26L Brake Control 
       * [x] 60 sec PCS cutout

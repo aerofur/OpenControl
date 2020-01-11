@@ -7,7 +7,7 @@
 @trigger none
 @model
 
-LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM)
+LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 

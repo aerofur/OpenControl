@@ -338,32 +338,34 @@ if(CONFIGURATION_DATA[23,number] == 0){
 }
 elseif(CONFIGURATION_DATA[23,number] == 1){
     if(!Independent_Bail){
-        if(LOCOMOTIVE_DATA[4,number]<65){
-            if(IndHiss){
-                if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
-                    soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
-                    soundStop("indrelease",1)
-                    timer("indhissRLA",1000)
-                    IndHiss = 0
+        if(LOCOMOTIVE_DATA[7,number]!=1){
+            if(LOCOMOTIVE_DATA[4,number]<65){
+                if(IndHiss){
+                    if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
+                        soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
+                        soundStop("indrelease",1)
+                        timer("indhissRLA",1000)
+                        IndHiss = 0
+                    }
+                }
+                if(changed(clk("indhissRLA"))&clk("indhissRLA")){
+                    IndHiss = 1 
+                    stoptimer("indhissRLA")
                 }
             }
-            if(changed(clk("indhissRLA"))&clk("indhissRLA")){
-                IndHiss = 1 
-                stoptimer("indhissRLA")
-            }
-        }
-        if(LOCOMOTIVE_DATA[4,number]>0){ 
-            if(IndRelease){
-                if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
-                    soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
-                    soundStop("indhiss",1)
-                    timer("indhissRLB",1000)
-                    IndRelease = 0
+            if(LOCOMOTIVE_DATA[4,number]>0){ 
+                if(IndRelease){
+                    if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
+                        soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
+                        soundStop("indhiss",1)
+                        timer("indhissRLB",1000)
+                        IndRelease = 0
+                    }
                 }
-            }
-            if(changed(clk("indhissRLB"))&clk("indhissRLB")){
-                IndRelease = 1
-                stoptimer("indhissRLB")
+                if(changed(clk("indhissRLB"))&clk("indhissRLB")){
+                    IndRelease = 1
+                    stoptimer("indhissRLB")
+                }
             }
         }
     }

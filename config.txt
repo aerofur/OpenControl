@@ -1,7 +1,8 @@
 @name OpenControl/config
 @inputs 
-@outputs [CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA]:table
-@persist 
+@outputs [CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
+@persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
+@persist HandBrake Sander Routing:table
 @trigger none
 @model
 Controls = table()
@@ -11,9 +12,9 @@ if(first()){
     # --// Control Stand //--
     
     #Reverser
-    ReverserF = ""
-    ReverserN = ""
-    ReverserR = ""
+    ReverserFS = ""
+    ReverserNS = ""
+    ReverserRS = ""
     
     #Throttle (Notch)
     ThrottleAdvance = ""
@@ -87,6 +88,18 @@ if(first()){
     #For example consider a locomotive with a Selector Lever. Normally you'd press [IncreaseDynamics] to turn on the dynamic braking
     #With LeverBased mode, in order to turn on the dynamics you have to be in the "Off" selector notch and press [DecreaseTransition] to turn on the dynamics.
 
+
+foreach(K,V:string = Controls){
+    if(V:find(" +Shift")){
+        Routing[K,number] = 1
+        local EXP = V:explode(" ")
+        Controls[K,string] = EXP[1,string]
+    }
+    else{
+        Routing[K,number] = 0
+    }
 }
-CONFIGURATION_DATA = array(Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,AutomaticBrakeType,IndependentBrakeType)
+}
+CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,AutomaticBrakeType,IndependentBrakeType)
 CONFIGURATION_CONTROL_DATA = Controls
+CONFIGURATION_ROUTING_DATA = Routing

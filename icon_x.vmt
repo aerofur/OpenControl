@@ -1,0 +1,9 @@
+VertexLitGeneric
+{
+	$basetexture	"models/proppertextures/misc/opencontrol/logo_x"
+	$alphatest 	1
+	$alphatestreference	0.5
+	$allowAlphaToCoverage	1
+
+
+}

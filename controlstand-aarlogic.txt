@@ -1,16 +1,18 @@
 @name OpenControl/controlstand-aarlogic
-@inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array ServiceZone InServiceZone AutomaticPressureSet EmergRelease
-@persist Driver:entity Routing:table Controls:table Shift:string
+@inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat InsertReverser Horn [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
+@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Routing:table LoadAMPS
+@persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
-@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS
+@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches
+@persist Notch UnNotchThrottleF UnNotchThrottleB Reverser HornPullcord
 @trigger none 
 @model
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail)
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
 Controls = CONFIGURATION_CONTROL_DATA 
+Routing = CONFIGURATION_ROUTING_DATA
 
 ServiceHiss = 1
 ServiceRelease = 1
@@ -19,55 +21,162 @@ IndRelease = 1
 EmergRelease = 0
 LocoBrakePOS = LOCOMOTIVE_DATA[4,number]
 
+
+Notch = 0
+UnNotchThrottleF = 0
+UnNotchThrottleB = 0
+
+
+NumberOfNotches = 8
+
+HornPullcord = 0
+
 #CONFIGURATION_DATA = array(Controls,Shift,LeverBased,ReverserF,ReverserN,ReverserR,ThrottleAdvance,ThrottleRetreat
 #,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,
 #AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff)
-foreach(K,V:string = Controls){
-    if(V:find(" +Shift")){
-        Routing[K,number] = 1
-        local EXP = V:explode(" ")
-        Controls[K,string] = EXP[1,string]
-    }
-    else{
-        Routing[K,number] = 0
-    }
-}
 }
 runOnKeys(Driver,1) 
 interval(150)
+
+local Driver = noentity()
+local PodDriver = Pod:driver()
 Driver = Pod:driver()
+if(Driver & !DriverQ){
+    DriverQ = 1
+    runOnKeys(Driver,1)
+}elseif(!Driver & DriverQ){
+    DriverQ = 0
+    runOnKeys(DriverOld,0)
+}
+DriverOld = Driver
 
 if(Driver!=noentity()){
-    local Shifting = Driver:keyPressed(CONFIGURATION_DATA[2,string])
-    UseButton = Driver:keyPressed(Controls["UseButton",string]) & (Routing["UseButton",number] ? Shifting : !Shifting)
-    
-    if(!UseButton){
-        local RF = UsingRearSeat ? "ReverserB" : "ReverserF"
-        local RB = UsingRearSeat ? "ReverserF" : "ReverserB"
+    if(keyClk(Driver)){
+        local Shifting = Driver:keyPressed(CONFIGURATION_DATA[1,string])
+        UseButton = Driver:keyPressed(Controls["UseButton",string]) & (Routing["UseButton",number] ? Shifting : !Shifting)
         
-        ReverserF = Driver:keyPressed(Controls[RF,string]) & (Routing[RF,number] ? Shifting : !Shifting)
-        ReverserB = Driver:keyPressed(Controls[RB,string]) & (Routing[RB,number] ? Shifting : !Shifting)
-        
-        IncreaseThrottle = Driver:keyPressed(Controls["IncreaseThrottle",string]) & (Routing["IncreaseThrottle",number] ? Shifting : !Shifting)
-        DecreaseThrottle = Driver:keyPressed(Controls["DecreaseThrottle",string]) & (Routing["DecreaseThrottle",number] ? Shifting : !Shifting)
-        
-        IncreaseDynamics = Driver:keyPressed(Controls["IncreaseDynamics",string]) & (Routing["IncreaseDynamics",number] ? Shifting : !Shifting)
-        DecreaseDynamics = Driver:keyPressed(Controls["DecreaseDynamics",string]) & (Routing["DecreaseDynamics",number] ? Shifting : !Shifting)
-        
-        IncreaseTrainBrake = Driver:keyPressed(Controls["IncreaseTrainBrake",string]) & (Routing["IncreaseTrainBrake",number] ? Shifting : !Shifting)
-        DecreaseTrainBrake = Driver:keyPressed(Controls["DecreaseTrainBrake",string]) & (Routing["DecreaseTrainBrake",number] ? Shifting : !Shifting)
-        
-        IncreaseLocoBrake = Driver:keyPressed(Controls["IncreaseLocoBrake",string]) & (Routing["IncreaseLocoBrake",number] ? Shifting : !Shifting)
-        DecreaseLocoBrake = Driver:keyPressed(Controls["DecreaseLocoBrake",string]) & (Routing["DecreaseLocoBrake",number] ? Shifting : !Shifting)
-        Independent_Bail = Driver:keyPressed(Controls["BailLocoBrake",string]) & (Routing["BailLocoBrake",number] ? Shifting : !Shifting)
-        
-        HandBrake = Driver:keyPressed(Controls["HandBrake",string]) & (Routing["HandBrake",number] ? Shifting : !Shifting)
-        Sander = Driver:keyPressed(Controls["Sander",string]) & (Routing["Sander",number] ? Shifting : !Shifting)
-        
-        SelectorUp = Driver:keyPressed(Controls["SelectorUp",string]) & (Routing["SelectorUp",number] ? Shifting : !Shifting)
-        SelectorDown = Driver:keyPressed(Controls["SelectorDown",string]) & (Routing["SelectorDown",number] ? Shifting : !Shifting)
+        if(!UseButton){
+            local RF = UsingRearSeat ? "ReverserB" : "ReverserF"
+            local RB = UsingRearSeat ? "ReverserF" : "ReverserB"
+            
+            ReverserF = Driver:keyPressed(Controls[RF,string]) & (Routing[RF,number] ? Shifting : !Shifting)
+            ReverserB = Driver:keyPressed(Controls[RB,string]) & (Routing[RB,number] ? Shifting : !Shifting)
+            
+            IncreaseThrottle = Driver:keyPressed(Controls["IncreaseThrottle",string]) & (Routing["IncreaseThrottle",number] ? Shifting : !Shifting)
+            DecreaseThrottle = Driver:keyPressed(Controls["DecreaseThrottle",string]) & (Routing["DecreaseThrottle",number] ? Shifting : !Shifting)
+            
+            IncreaseDynamics = Driver:keyPressed(Controls["IncreaseDynamics",string]) & (Routing["IncreaseDynamics",number] ? Shifting : !Shifting)
+            DecreaseDynamics = Driver:keyPressed(Controls["DecreaseDynamics",string]) & (Routing["DecreaseDynamics",number] ? Shifting : !Shifting)
+            
+            IncreaseTrainBrake = Driver:keyPressed(Controls["IncreaseTrainBrake",string]) & (Routing["IncreaseTrainBrake",number] ? Shifting : !Shifting)
+            DecreaseTrainBrake = Driver:keyPressed(Controls["DecreaseTrainBrake",string]) & (Routing["DecreaseTrainBrake",number] ? Shifting : !Shifting)
+            
+            IncreaseLocoBrake = Driver:keyPressed(Controls["IncreaseLocoBrake",string]) & (Routing["IncreaseLocoBrake",number] ? Shifting : !Shifting)
+            DecreaseLocoBrake = Driver:keyPressed(Controls["DecreaseLocoBrake",string]) & (Routing["DecreaseLocoBrake",number] ? Shifting : !Shifting)
+            Independent_Bail = Driver:keyPressed(Controls["BailLocoBrake",string]) & (Routing["BailLocoBrake",number] ? Shifting : !Shifting)
+            
+            HandBrake = Driver:keyPressed(Controls["HandBrake",string]) & (Routing["HandBrake",number] ? Shifting : !Shifting)
+            Sander = Driver:keyPressed(Controls["Sander",string]) & (Routing["Sander",number] ? Shifting : !Shifting)
+            
+            SelectorUp = Driver:keyPressed(Controls["SelectorUp",string]) & (Routing["SelectorUp",number] ? Shifting : !Shifting)
+            SelectorDown = Driver:keyPressed(Controls["SelectorDown",string]) & (Routing["SelectorDown",number] ? Shifting : !Shifting)
+        }
     }
 }
+
+if(Horn == 0.5 & !HornPullcord){
+    ControlStand:setBodygroup(6,1)    
+}
+elseif(Horn == 1 & !HornPullcord){
+    ControlStand:setBodygroup(6,2)    
+}
+elseif(HornPullcord == 1 & !HornPullcord){
+    ControlStand:setBodygroup(6,3)    
+}
+elseif(Horn == 0 & !HornPullcord){
+    ControlStand:setBodygroup(6,0)    
+}
+
+if(InsertReverser){
+    if(changed(ReverserF)&ReverserF){
+        if(Reverser<1){
+            Reverser += 1  
+        }
+    }
+    elseif(changed(ReverserB)&ReverserB){
+        if(Reverser>-1){
+            Reverser -= 1  
+        }
+    }
+}
+
+if(InsertReverser){
+    ControlStand:setBodygroup(1,2+Reverser)
+    ReverserRemoved = 0
+}
+elseif(!InsertReverser & Reverser!=0){
+    ControlStand:setBodygroup(1,2+Reverser)    
+    ReverserRemoved = 0
+}
+elseif(!InsertReverser & Reverser == 0){
+    ControlStand:setBodygroup(1,0)   
+    ReverserRemoved = 1 
+}
+
+if(changed(IncreaseThrottle & !UnNotchThrottleF)&IncreaseThrottle & !UnNotchThrottleF){
+    timer("throttlemoveF",400)    
+}
+elseif(changed(DecreaseThrottle & !UnNotchThrottleB)&DecreaseThrottle & !UnNotchThrottleB){
+    timer("throttlemoveB",400)    
+}
+
+if(clk("throttlemoveF") & IncreaseThrottle){
+    UnNotchThrottleF = 1   
+    stoptimer("throttlemoveF")
+}
+elseif(clk("throttlemoveB") & DecreaseThrottle){
+    UnNotchThrottleB = 1   
+    stoptimer("throttlemoveB")
+}
+
+if(!IncreaseThrottle & UnNotchThrottleF){
+    UnNotchThrottleF = 0    
+}
+elseif(!DecreaseThrottle & UnNotchThrottleB){
+    UnNotchThrottleB = 0    
+}
+
+if(!UnNotchThrottleF & !UnNotchThrottleB){
+    if(changed(IncreaseThrottle)&IncreaseThrottle){
+        if(Notch<NumberOfNotches){
+            Notch += 1    
+        } 
+    }
+    elseif(changed(DecreaseThrottle)&DecreaseThrottle){
+        if(Notch>0){
+            Notch -= 1    
+        }
+    }
+}
+else{#if(UnNotchThrottleF | UnNotchThrottleB){
+    if(UnNotchThrottleF){
+        if(IncreaseThrottle){
+            if(Notch<NumberOfNotches){
+                Notch += 1    
+            } 
+        }
+    }
+    elseif(UnNotchThrottleB){
+        if(DecreaseThrottle){
+            if(Notch>0){
+                Notch -= 1    
+            }
+        }
+    }
+}
+
+ControlStand:setBodygroup(2,Notch)
+
 
 if(CONFIGURATION_DATA[22,number]<2){
     if(ServiceZone==20 & DecreaseTrainBrake & BrakeNotch == 2){
@@ -188,6 +297,10 @@ if(IncreaseLocoBrake & LocoBrakePOS<65){
 }
 elseif(DecreaseLocoBrake & LocoBrakePOS>0){
     LocoBrakePOS -= 2    
+}
+
+if(LocoBrakePOS<0){
+LocoBrakePOS = 0   
 }
 
 if(!Independent_Bail){

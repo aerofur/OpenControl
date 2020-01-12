@@ -1,14 +1,14 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat InsertReverser Horn [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Routing:table LoadAMPS
+@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Reverser Notch Routing:table
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
-@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches
+@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake
 @persist Notch UnNotchThrottleF UnNotchThrottleB Reverser HornPullcord
 @trigger none 
 @model
-CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail)
+CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake)
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
 Controls = CONFIGURATION_CONTROL_DATA 
@@ -288,6 +288,7 @@ elseif(CONFIGURATION_DATA[22,number] == 2){
             LocalEmergency = 1
             Suppression = 1
             Emergency = 1
+            EmergencyBrake = 1
         break
     }
 }
@@ -488,6 +489,7 @@ elseif(CONFIGURATION_DATA[23,number] == 1){
 
 if(changed(LocalEmergency & BrakeNotch<2)&LocalEmergency & BrakeNotch<2){
     timer("emrgtimeout",60000)    
+    EmergencyBrake = 0
 }
 
 if(clk("emrgtimeout")){

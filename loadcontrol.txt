@@ -1,0 +1,301 @@
+@name OpenControl/loadcontrol
+@inputs Throttle Reverser HandBrake BPAnglecock [LOCOMOTIVE_DATA CONTROL_STAND_DATA Trucks SpanBolsters]:array
+@outputs Load MPH TrainWeight BE BEAuto Force TE VeV
+@persist [SmoothTable]:table CEMF R MainGeneratorVoltage MaxGeneratorVoltage MaxGeneratorCurrent MotorVoltage CircuitType CurrentBO LastProps:array
+@persist EngineRedlineRPM EngineIdleRPM NumNotches Horsepower CarCount Motors Axles Weight
+@persist TE V BHQ BaseSpeed TopSpeed Braking_Train Braking_Loco ClaspBrakes BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux
+@trigger none
+@model
+
+E = entity()
+W = E:isWeldedTo()
+
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+
+MainGeneratorVoltage = 0
+MaxGeneratorVoltage = 1500
+MaxGeneratorCurrent = 6000
+CircuitType = 4
+R = 0
+Current = 0
+CEMF = 0
+MotorVoltage = 0
+Motors = 6
+
+EngineIdleRPM = 200
+EngineRedlineRPM = 950
+NumNotches = 8
+
+Axles = 6
+Horsepower = 3600
+Weight = 420000
+
+BaseSpeed = 71
+TopSpeed = 71
+ClaspBrakes = 1
+BrakeMul = (775*2)
+MaxTrainBrakeForce = 0
+Holding = 1
+AutoMux = 1
+BHQ = 0
+
+
+function number smooth(Var,SmoothAmount,ID:string,DefaultVal){
+    if(!SmoothTable:exists(ID)){
+        SmoothTable[ID,number] = DefaultVal
+    }
+    local Smooth = SmoothTable[ID,number]    
+    Smooth += (Var-Smooth) / SmoothAmount
+    SmoothTable[ID,number] = Smooth
+    return Smooth
+}
+
+function number carCount(BP_Anglecock){
+    local Cars = 0
+    if(BP_Anglecock){
+        Cars = 1
+    }else{
+        local Props = E:getConstraints()
+        local Cnt = 0
+        local ImportantProps = array()
+        foreach(K,V:entity = Props){
+            if(V:mass()>1000){
+                ImportantProps[Cnt,entity] = V
+                Cnt++
+            }
+        }
+        local ExtraProps = ImportantProps:count()
+        Cars = floor(ExtraProps/3)
+        if(Cars<0){Cars = 0}
+        
+    }
+    MaxTrainBrakeForce = BrakeMul*(Cars-1)*0.475
+    if(MaxTrainBrakeForce<0){MaxTrainBrakeForce = 0}
+    return Cars
+    
+}
+
+function number trainWeight(){
+    local WeightProps = E:getConstraints()
+    local TotalMass = 0
+    foreach(K,V:entity=WeightProps){
+        TotalMass += V:mass()
+    }
+    return TotalMass
+}
+
+function void abRelease(){
+    local Ents = E:getConstraints()
+    foreach(K,V:entity=Ents){
+        V:propPhysicalMaterial("friction_00")
+        V:propDrag(0)
+    }
+    return void
+}
+
+function void abRest(Ents:array){
+    foreach(K,V:entity=Ents){
+        V:propPhysicalMaterial("phx_tire_normal")
+    }
+    return void
+}
+
+function void abEmergency(Ents:array){
+    foreach(K,V:entity=Ents){
+        V:propPhysicalMaterial("ice")
+    }
+    return void
+}
+
+function void setWeight(Carbody:entity,Bolsters:array,Trucks:array,Pounds){
+    local KG = fromUnit("lb",Pounds/2)
+    local CarbodyWeight = clamp(round(KG/2),10,50000)
+    
+    Carbody:setMass(CarbodyWeight)
+    KG -= CarbodyWeight
+    
+    if(Bolsters:count()>0){
+        local BolsterWgt = round(KG/(Bolsters:count()*2))
+        for(N=1,Bolsters:count()){
+            Bolsters[N,entity]:setMass(BolsterWgt)
+        }
+        KG -= BolsterWgt*Bolsters:count()
+    }
+    
+    
+    local TruckWgt = round(KG/Trucks:count())
+    for(N=1,Trucks:count()){
+        Trucks[N,entity]:setMass(TruckWgt)
+    }
+
+    
+    return void
+}
+
+setWeight(W,SpanBolsters,Trucks,Weight)
+timer("checkcars",5000)
+}
+
+VeV = round(V)
+
+interval(150)
+
+if(clk("checkcars")){
+    CarCount = carCount(BPAnglecock)
+    TrainWeight = trainWeight()
+    LastProps = E:getConstraints()
+    timer("checkcars",5000)
+}
+
+local EngineRPMCal = (((EngineRedlineRPM-EngineIdleRPM)/NumNotches)*Throttle)
+local EngineRPMSmoothed = smooth(EngineRPMCal,15,"enginerpmsmoothing",0)
+EngineRPM = EngineRPMSmoothed+EngineIdleRPM
+
+
+V = -E:velL():z()
+MPH = toUnit("mph",abs(V))*4/3
+KPH = toUnit("km/h",abs(V))*4/3
+
+
+if(Throttle>0){
+    GenEngineRPM = EngineRPMSmoothed+EngineIdleRPM
+    MainGeneratorVoltage = (MaxGeneratorVoltage/(EngineRedlineRPM/GenEngineRPM))
+    MotorVoltage = MainGeneratorVoltage
+}
+elseif(Throttle == 0){
+    GenEngineRPM = EngineIdleRPM
+    MainGeneratorVoltage = GenEngineRPM
+    MotorVoltage = (CircuitType*CEMF)
+}
+
+local RampedMotorVoltage = MotorVoltage #smooth(MotorVoltage,5,"uh",0)
+
+local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
+CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
+R = RampedMotorVoltage/CurrentNR
+
+CurrentBO = (CurrentNR/R)
+
+if(CurrentBO>0){
+    Current = CurrentBO  
+}
+else{
+    Current = 0  
+}
+
+#LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch)
+
+#BE = (LOCOMOTIVE_DATA[3,number]*BrakeMul*(ClaspBrakes ? 1.25 : 1)*(26/72)*Axles/6 + MaxTrainBrakeForce*LOCOMOTIVE_DATA[4,number])*300/26
+
+if(LOCOMOTIVE_DATA[4,number]<10){
+    BE = 0
+}
+elseif(LOCOMOTIVE_DATA[4,number]>10){
+    BE = (LOCOMOTIVE_DATA[4,number]*(Holding ? 0 : 27000*(ClaspBrakes ? 1.25 : 1)))
+}
+
+
+if((Holding & round(LOCOMOTIVE_DATA[3,number])<90)){
+    AutoMux = 1    
+}
+elseif((!Holding & round(LOCOMOTIVE_DATA[3,number])>89)){
+    AutoMux = 0    
+}
+
+if(round(LOCOMOTIVE_DATA[3,number])<90){
+    if(MaxTrainBrakeForce == 0){
+        BEAuto = (round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 80000)
+    }
+    elseif(MaxTrainBrakeForce>0){
+        BEAuto = MaxTrainBrakeForce*(round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 22)
+    }
+}
+elseif(round(LOCOMOTIVE_DATA[3,number])>89){
+    BEAuto = 0    
+}
+
+if((LOCOMOTIVE_DATA[4,number]>10) & !BHQ & (MPH<1)){
+    Holding = 1
+    BHQ = 1
+    abRest(Trucks)
+}
+elseif((LOCOMOTIVE_DATA[2,number]<85 & !BHQ & (MPH<1))){
+    Holding = 1
+    BHQ = 1
+    abRest(Trucks)
+}
+elseif(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & BHQ))){
+    Holding = 0
+    BHQ = 0
+    abRelease()
+}
+elseif(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & BHQ))){
+    Holding = 0
+    BHQ = 0
+    abRelease()
+}
+
+
+
+#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail)
+#[
+Braking_Train = abs(round(LOCOMOTIVE_DATA[3,number]) - 90)>0
+Braking_Loco = LOCOMOTIVE_DATA[4,number]>0
+Cyl = LOCOMOTIVE_DATA[4,number]
+BrakeCyl = (abs(round(LOCOMOTIVE_DATA[3,number])-90))
+
+BE = (Cyl*BrakeMul*(ClaspBrakes ? 1.25 : 1)*(26/72)*Axles/6)
+BEA = (MaxTrainBrakeForce*BrakeCyl*300/26)
+local Overcome = (abs(TE) - BE)>0
+
+if(((Braking_Train | Braking_Loco) | HandBrake) & !BHQ & (MPH<1)){
+    BHQ = 1
+    abRest(Trucks)
+}
+elseif((!(Braking_Train | Braking_Loco) | Overcome) & !HandBrake & BHQ){
+    BHQ = 0
+    abRelease()
+}
+]#
+if(CONTROL_STAND_DATA[11,number]){
+    abEmergency(LastProps)
+}
+
+TE_EffectiveLoad = Current/(1+(round(-(LOCOMOTIVE_DATA[3,number]-90))/90))
+TE_Effective = smooth(TE_EffectiveLoad,5,"loadsmooth-ramp",0)
+Load = smooth(Current,7,"loadsmooth-ramp2",0)
+TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*2000/8) 
+
+if(Reverser == 1){
+    Force = (TE*sign(Reverser) - abs((BE*1)+(BEAuto*1)))
+}
+elseif(Reverser == 0){
+    if(round(V)>0){
+        Force = (abs((BE*1)+(BEAuto*1)))*-1
+    }
+    elseif(round(V)<0){
+        Force = (abs((BE*1)+(BEAuto*1)))*1
+    }
+}
+elseif(Reverser == -1){
+    Force = (TE*sign(Reverser) + abs((BE*1)+(BEAuto*1)))   
+}
+
+W:applyForce(-E:up()*(Force/2))
+
+#[
+if(BHQ){ TE = 0 }
+BE = sign(V)*(MPH>0.5)*BE
+BEAuto = sign(V)*(MPH>0.5)*BE
+if((TE!=0) | ((BE | BEAuto)!=0)){
+    Force = (TE - abs((BE*1)+(BEAuto*1))) 
+    W:applyForce(-E:up()*(Force/2))
+}
+
+
+
+
+
+
+

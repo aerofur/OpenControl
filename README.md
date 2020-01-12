@@ -21,13 +21,17 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
     * [ ] Brake Pipe Logic
     * [x] Equalization Function
     * [ ] EOT Pressure Drop
-    * [ ] Equalising Reservoir ~ Main Reservoir - Pump Logic
+    * [x] Equalising Reservoir ~ Main Reservoir - Pump Logic
     * [x] Equalising Reservoir ~ Brake Pipe - Pump Logic
-    * [ ] Brake Type Settings (26L / 26C / 6SL / etc)
+    * [x] Brake Type Settings (26L / 26C / 6SL / etc)
   * [ ] Traction System
     * [ ] Generator Transition
+    * [ ] Traction Motor Transition
+    * [ ] AC & DC Motor/Gen Systems
+    * [x] Traction Motor Logic
+    * [x] Air Brake Force Application
   * [x] Physics System
-  * [ ] User Control
+  * [x] User Control
   * [ ] I/O
     * [ ] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2
@@ -35,8 +39,8 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
     * [x] 26L Brake Control 
       * [x] 60 sec PCS cutout
       * [x] Brake Position Logic
-    * [ ] Communitcation between Control Stand and Main Chip
-  * [ ] Configs
+    * [x] Communitcation between Control Stand and Main Chip
+  * [x] Configs
   
   
 ## Roadmap

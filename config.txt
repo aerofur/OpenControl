@@ -55,6 +55,14 @@ if(first()){
     IndependentBailOn = "opencontrol/airbrakes/sa26/bail_off2.wav"
     IndependentBailOff = "opencontrol/airbrakes/sa26/bail_on2.wav"
 
+    # --// MISC //--
+    
+    TractionMotor = "gsgtrainsounds/wheels/delco_d77.wav"
+    RadiatorFanStart = "gsgtrainsounds/misc/delco_radfan_loop.wav"
+    RadiatorFanEnd = "gsgtrainsounds/misc/delco_radfan_end.wav"
+    DynamicFanStart = "gsgtrainsounds/misc/delco_dynfan_loop.wav"
+    DynamicFanEnd = "gsgtrainsounds/misc/delco_dynfan_end.wav"
+
     # --// Controls //--
 
     Shift = "lshift" #When pressing this key, all controls with "+Shift" next to them will be triggered, and all the other will be ignored.
@@ -100,6 +108,9 @@ foreach(K,V:string = Controls){
     }
 }
 }
-CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,AutomaticBrakeType,IndependentBrakeType)
+CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
+CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
+AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd)
+
 CONFIGURATION_CONTROL_DATA = Controls
 CONFIGURATION_ROUTING_DATA = Routing

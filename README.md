@@ -35,6 +35,10 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
   * [ ] I/O
     * [ ] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2
+    * [ ] Handbrake
+      * Make handbrake e2 that uses `eyeTrace()`, meaning you dont need to use buttons. (E to apply, Shift+E to release)
+    * [ ] Locomotive Fan E2
+      * Adds working fans to the locomotive with sounds. This may be required to have on the locomotive for sounds, otherwise no dyno / fan sounds, etc.
   * [ ] Control Stand
     * [x] 26L Brake Control 
       * [x] 60 sec PCS cutout

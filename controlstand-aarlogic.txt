@@ -1,14 +1,17 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat InsertReverser Horn [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Reverser Notch Routing:table
+@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Reverser Notch DynamicNotch DynamicsPowerZone Routing:table
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
 @persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake
-@persist Notch UnNotchThrottleF UnNotchThrottleB Reverser HornPullcord
+@persist Notch UnNotchThrottleF UnNotchThrottleB Reverser HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock
 @trigger none 
 @model
-CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake)
+
+CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
+DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock)
+
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
 Controls = CONFIGURATION_CONTROL_DATA 
@@ -26,6 +29,10 @@ Notch = 0
 UnNotchThrottleF = 0
 UnNotchThrottleB = 0
 
+DynamicNotch = 0
+DynamicsSetup = 0
+DynamicsPowerZone = 0
+DynamicUnlock = 0
 
 NumberOfNotches = 8
 
@@ -98,14 +105,16 @@ elseif(Horn == 0 & !HornPullcord){
 }
 
 if(InsertReverser){
-    if(changed(ReverserF)&ReverserF){
-        if(Reverser<1){
-            Reverser += 1  
+    if(Notch == 0 & DynamicNotch == 0){
+        if(changed(ReverserF)&ReverserF){
+            if(Reverser<1){
+                Reverser += 1  
+            }
         }
-    }
-    elseif(changed(ReverserB)&ReverserB){
-        if(Reverser>-1){
-            Reverser -= 1  
+        elseif(changed(ReverserB)&ReverserB){
+            if(Reverser>-1){
+                Reverser -= 1  
+            }
         }
     }
 }
@@ -123,53 +132,55 @@ elseif(!InsertReverser & Reverser == 0){
     ReverserRemoved = 1 
 }
 
-if(changed(IncreaseThrottle & !UnNotchThrottleF)&IncreaseThrottle & !UnNotchThrottleF){
-    timer("throttlemoveF",400)    
-}
-elseif(changed(DecreaseThrottle & !UnNotchThrottleB)&DecreaseThrottle & !UnNotchThrottleB){
-    timer("throttlemoveB",400)    
-}
-
-if(clk("throttlemoveF") & IncreaseThrottle){
-    UnNotchThrottleF = 1   
-    stoptimer("throttlemoveF")
-}
-elseif(clk("throttlemoveB") & DecreaseThrottle){
-    UnNotchThrottleB = 1   
-    stoptimer("throttlemoveB")
-}
-
-if(!IncreaseThrottle & UnNotchThrottleF){
-    UnNotchThrottleF = 0    
-}
-elseif(!DecreaseThrottle & UnNotchThrottleB){
-    UnNotchThrottleB = 0    
-}
-
-if(!UnNotchThrottleF & !UnNotchThrottleB){
-    if(changed(IncreaseThrottle)&IncreaseThrottle){
-        if(Notch<NumberOfNotches){
-            Notch += 1    
-        } 
+if(DynamicNotch == 0){
+    if(changed(IncreaseThrottle & !UnNotchThrottleF)&IncreaseThrottle & !UnNotchThrottleF){
+        timer("throttlemoveF",400)    
     }
-    elseif(changed(DecreaseThrottle)&DecreaseThrottle){
-        if(Notch>0){
-            Notch -= 1    
-        }
+    elseif(changed(DecreaseThrottle & !UnNotchThrottleB)&DecreaseThrottle & !UnNotchThrottleB){
+        timer("throttlemoveB",400)    
     }
-}
-else{#if(UnNotchThrottleF | UnNotchThrottleB){
-    if(UnNotchThrottleF){
-        if(IncreaseThrottle){
+    
+    if(clk("throttlemoveF") & IncreaseThrottle){
+        UnNotchThrottleF = 1   
+        stoptimer("throttlemoveF")
+    }
+    elseif(clk("throttlemoveB") & DecreaseThrottle){
+        UnNotchThrottleB = 1   
+        stoptimer("throttlemoveB")
+    }
+    
+    if(!IncreaseThrottle & UnNotchThrottleF){
+        UnNotchThrottleF = 0    
+    }
+    elseif(!DecreaseThrottle & UnNotchThrottleB){
+        UnNotchThrottleB = 0    
+    }
+    
+    if(!UnNotchThrottleF & !UnNotchThrottleB){
+        if(changed(IncreaseThrottle)&IncreaseThrottle){
             if(Notch<NumberOfNotches){
                 Notch += 1    
             } 
         }
-    }
-    elseif(UnNotchThrottleB){
-        if(DecreaseThrottle){
+        elseif(changed(DecreaseThrottle)&DecreaseThrottle){
             if(Notch>0){
                 Notch -= 1    
+            }
+        }
+    }
+    else{#if(UnNotchThrottleF | UnNotchThrottleB){
+        if(UnNotchThrottleF){
+            if(IncreaseThrottle){
+                if(Notch<NumberOfNotches){
+                    Notch += 1    
+                } 
+            }
+        }
+        elseif(UnNotchThrottleB){
+            if(DecreaseThrottle){
+                if(Notch>0){
+                    Notch -= 1    
+                }
             }
         }
     }
@@ -177,6 +188,45 @@ else{#if(UnNotchThrottleF | UnNotchThrottleB){
 
 ControlStand:setBodygroup(2,Notch)
 
+if(Reverser!=0){
+    if(Notch == 0){
+        if(changed(IncreaseDynamics)&IncreaseDynamics){
+            if(DynamicNotch<2 & DynamicsPowerZone == 0){
+                DynamicNotch += 1
+            }
+        }
+        if(changed(DecreaseDynamics)&DecreaseDynamics){
+            if(DynamicNotch>0 & DynamicsPowerZone == 0){
+                DynamicNotch -= 1
+            }
+        }
+        if(DynamicNotch == 2){
+            DynamicUnlock = 1
+            if(IncreaseDynamics){
+                if(DynamicsPowerZone<80){
+                    DynamicsPowerZone += 1 
+                }
+            }
+            elseif(DecreaseDynamics){
+                if(DynamicsPowerZone>0){
+                    DynamicsPowerZone -= 1 
+                }
+            }
+        }
+        if(DynamicNotch == 1){
+            DynamicsSetup = 1    
+        }
+        elseif(DynamicNotch == 0){
+            DynamicsSetup = 0    
+        }
+        
+        if(DynamicsPowerZone == 0){
+            DynamicUnlock = 0   
+        }
+    }   
+}
+
+ControlStand:setBodygroup(3,3+DynamicNotch+((DynamicsPowerZone/10)-3))    
 
 if(CONFIGURATION_DATA[22,number]<2){
     if(ServiceZone==20 & DecreaseTrainBrake & BrakeNotch == 2){
@@ -316,7 +366,7 @@ elseif(Independent_Bail){
 
 if(CONFIGURATION_DATA[22,number]<2){
     if(BrakeCutout>0){ 
-        if(!Emergency){
+        if(!EmergencyBrake){
             
             if(ServiceHiss){
                 if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
@@ -344,8 +394,8 @@ if(CONFIGURATION_DATA[22,number]<2){
                 stoptimer("servicehissRLB")
             }
         }
-        elseif(Emergency){
-            if(changed(Emergency)&Emergency){
+        elseif(EmergencyBrake){
+            if(changed(EmergencyBrake)&EmergencyBrake){
                 soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
                 EmergRelease = 2
             }    
@@ -364,7 +414,7 @@ if(CONFIGURATION_DATA[22,number]<2){
 }
 elseif(CONFIGURATION_DATA[22,number] == 2){
     if(BrakeCutout>0){ 
-        if(!Emergency){
+        if(!EmergencyBrake){
             
             if(ServiceHiss){
                 if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
@@ -392,8 +442,8 @@ elseif(CONFIGURATION_DATA[22,number] == 2){
                 stoptimer("servicehissRLB")
             }
         }
-        elseif(Emergency){
-            if(changed(Emergency)&Emergency){
+        elseif(EmergencyBrake){
+            if(changed(EmergencyBrake)&EmergencyBrake){
                 soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
                 EmergRelease = 2
             }    

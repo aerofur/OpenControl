@@ -1,0 +1,75 @@
+@name OpenControl/sound-processor
+@inputs Locomotive:entity
+@outputs
+@persist
+@trigger none
+@model
+
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+
+    # --// Dynamics //--
+    
+    Dynamics = 0 #Set to 1 if your Locomotive has Dynamics, else set to 0.
+    DynamicFans = 0 #Number of Dynamic Fans, Max is 2.
+
+    local FanTexture = "models/proppertextures/fan_generic"
+
+    # Fans
+    
+    A = 1
+    holoCreate(A)
+    holoParent(A,Locomotive)
+    holoModel(A, "plane")
+    holoColor(A,vec(255))
+    holoScale(A,vec(4,4,1))
+    holoPos(A,Locomotive:toWorld(vec(15,0,136)))
+    holoAng(A,Locomotive:toWorld(ang(0,randint(1,361),0)))    
+    holoMaterial(A,FanTexture)
+    
+    A = 2
+    holoCreate(A)
+    holoParent(A,Locomotive)
+    holoModel(A, "plane")
+    holoColor(A,vec(255))
+    holoScale(A,vec(4,4,1))
+    holoPos(A,Locomotive:toWorld(vec(72,0,136)))
+    holoAng(A,Locomotive:toWorld(ang(0,randint(1,361),0)))    
+    holoMaterial(A,FanTexture)
+    
+    A = 3
+    holoCreate(A)
+    holoParent(A,Locomotive)
+    holoModel(A, "plane")
+    holoColor(A,vec(255))
+    holoScale(A,vec(4,4,1))
+    holoPos(A,Locomotive:toWorld(vec(157,0,136)))
+    holoAng(A,Locomotive:toWorld(ang(0,randint(1,361),0)))    
+    holoMaterial(A,FanTexture)
+    
+    A = 4
+    holoCreate(A)
+    holoParent(A,Locomotive)
+    holoModel(A, "plane")
+    holoColor(A,vec(255))
+    holoScale(A,vec(4,4,1))
+    holoPos(A,Locomotive:toWorld(vec(214,0,136)))
+    holoAng(A,Locomotive:toWorld(ang(0,randint(1,361),0)))    
+    holoMaterial(A,FanTexture)
+
+    A = 5
+    holoCreate(A)
+    holoParent(A,Locomotive)
+    holoModel(A, "plane")
+    holoColor(A,vec(255))
+    holoScale(A,vec(4,4,1))
+    holoPos(A,Locomotive:toWorld(vec(271,0,136)))
+    holoAng(A,Locomotive:toWorld(ang(0,randint(1,361),0)))    
+    holoMaterial(A,FanTexture)
+
+}
+    
+    
+    
+    
+    

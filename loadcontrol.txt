@@ -1,10 +1,10 @@
 @name OpenControl/loadcontrol
 @inputs HandBrake [LOCOMOTIVE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA Trucks SpanBolsters]:array
-@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH TrainWeight BE BEAuto Force TE VeV CarCount BEVLB Holding
+@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH DynamicBrakeWarning GroundRelay TrainWeight BE BEAuto Force TE VeV CarCount BEVLB Holding
 @persist [E O W]:entity [SmoothTable]:table LastProps:array CEMF R MainGeneratorVoltage MaxGeneratorVoltage MaxGeneratorCurrent MaxDynamicCurrent MotorVoltage CircuitType CurrentBO
 @persist EngineRedlineRPM EngineIdleRPM NumNotches Horsepower CarCount Motors Axles Weight BEVLB MaxTractionMotorCurrent
 @persist TE V BHQ BaseSpeed TopSpeed Braking_Train Braking_Loco ClaspBrakes BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux
-@persist [AlarmBell]:string
+@persist [AlarmBell]:string DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay 
 @trigger none
 @model
 
@@ -49,6 +49,12 @@ Holding = 0
 AutoMux = 1
 BHQ = 0
 CarCount = 0
+DynamicTemp = 0
+MotorTemp = 0
+DynamicBrakeWarning = 0
+DynamicShort = 0
+MotorShort = 0
+GroundRelay = 0
 
 AlarmBell = CONFIGURATION_DATA[32,string]
 
@@ -189,7 +195,12 @@ if(CONTROL_STAND_DATA[12,number] == 0){
     CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
     R = RampedMotorVoltage/CurrentNR
     
-    CurrentBO = (CurrentNR/R)
+    if(!MotorShort & !GroundRelay){
+        CurrentBO = (CurrentNR/R)
+    }
+    elseif(MotorShort | GroundRelay){
+        CurrentBO = 0
+    }
 }
 elseif(CONTROL_STAND_DATA[12,number] == 2){
     local GRID_RESISTOR_OHMS = 0.923
@@ -203,14 +214,97 @@ elseif(CONTROL_STAND_DATA[12,number] == 2){
     local DBMotorVoltage = ((MaxDynamicCurrent/AxleRPM)*CONTROL_STAND_DATA[14,number])*4
     local DBMotorCurrent = (DBMotorVoltage - (CircuitType*CEMF))
     
-    CurrentBO = -(DBMotorCurrent/GRID_RESISTOR_OHMS)
+    if(!DynamicShort & !GroundRelay){
+        CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS*))
+    }
+    elseif(DynamicShort | GroundRelay){
+        CurrentBO = 0
+    }
 }
 
 if(inrange(CurrentBO,-MaxDynamicCurrent,MaxTractionMotorCurrent)){
     Current = CurrentBO  
 }
-else{
-    Current = 0  
+elseif(CurrentBO>MaxTractionMotorCurrent){
+    Current = MaxTractionMotorCurrent
+}
+elseif(CurrentBO<-MaxDynamicCurrent){
+    Current = -MaxDynamicCurrent
+}
+
+
+if(CONTROL_STAND_DATA[12,number]>0){
+    if(!DynamicShort){
+        if(Current>MaxContinuousDynamicCurrent){
+            DynamicTemp += (Current/100)
+            DynamicBrakeWarning = 1
+        }
+
+        if(DynamicTemp>150){
+            soundPlay("DB-Arking",0,"")
+            soundVolume("DB-Arking",((DynamicTemp-150)/100))
+            print("Warning your Dynamics are getting haaahahahaHOT, reduce your Dynamic Power or further damage will occour.")
+        }
+        elseif(DynamicTemp>350){
+            soundPlay("DB-Flashover",0,"")
+            DynamicShort = 1
+            print("even after hundreds of thousands of folds and unfolds, and fOlSs AnD unFOLds, AND FolDS AndD unFolDS, it can hold strong *snap* SPPSSHUGHHAAAAA")
+        }
+    }
+}
+elseif(CONTROL_STAND_DATA[12,number] == 0){
+    if(Notch>0){
+        if(!MotorShort){
+            if(Current>MaxContinuousTractionMotorCurrent){
+                MotorTemp += (Current/100)
+            }
+
+            if(MotorTemp>800){
+                soundPlay("TM-Arking",0,"")
+                soundVolume("TM-Arking",((MotorTemp-800)/100))
+                print("Warning your Traction Motors are getting haaahahahaHOT, reduce your Throttle or further damage will occour.")
+            }
+            elseif(MotorTemp>1200){
+                soundPlay("TM-Flashover",0,"")
+                MotorShort = 1
+                print("even after hundreds of thousands of folds and unfolds, and fOlSs AnD unFOLds, AND FolDS AndD unFolDS, it can hold strong *snap* SPPSSHUGHHAAAAA")
+            }
+        }
+    }
+}
+
+if(Current<MaxContinuousDynamicCurrent){
+    if(DynamicTemp>0){
+        DynamicTemp -= (CONTROL_STAND_DATA[12,number] ? 4 : 1)
+    }
+    if(DynamicTemp<0){
+        DynamicTemp = 0
+    }
+    DynamicBrakeWarning = 0
+}
+
+if(Current<MaxContinuousTractionMotorCurrent){
+    if(MotorTemp>0){
+        MotorTemp -= (CONTROL_STAND_DATA[12,number] ? 4 : 1)
+    }
+    if(MotorTemp<0){
+        MotorTemp = 0
+    }
+    DynamicBrakeWarning = 0
+}
+
+if(changed(DynamicShort)&DynamicShort){
+    GroundRelay = 1
+}
+if(changed(MotorShort)&MotorShort){
+    GroundRelay = 1
+}
+
+if(changed(GroundRelay)&GroundRelay){
+    soundPlay("LocomotiveAlarm",0,LocomotiveAlarmBell)
+}
+elseif(changed(GroundRelayReset)&GroundRelayReset){
+    soundPlay("LocomotiveAlarm",0,LocomotiveAlarmBell)
 }
 
 #LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch)

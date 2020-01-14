@@ -256,15 +256,15 @@ elseif(CONTROL_STAND_DATA[12,number] == 0){
     if(Notch>0){
         if(!MotorShort){
             if(Current>MaxContinuousTractionMotorCurrent){
-                MotorTemp += (Current/100)
+                MotorTemp += (Current/1000)
             }
 
-            if(MotorTemp>800){
+            if(MotorTemp>1000){
                 soundPlay("TM-Arking",0,"")
                 soundVolume("TM-Arking",((MotorTemp-800)/100))
                 print("Warning your Traction Motors are getting haaahahahaHOT, reduce your Throttle or further damage will occour.")
             }
-            elseif(MotorTemp>1200){
+            elseif(MotorTemp>1500){
                 soundPlay("TM-Flashover",0,"")
                 MotorShort = 1
                 print("even after hundreds of thousands of folds and unfolds, and fOlSs AnD unFOLds, AND FolDS AndD unFolDS, it can hold strong *snap* SPPSSHUGHHAAAAA")

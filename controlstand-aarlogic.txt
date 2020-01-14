@@ -1,6 +1,6 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BrakeCutout UsingRearSeat InsertReverser Horn [LOCOMOTIVE_DATA CONFIGURATION_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Reverser Notch DynamicNotch DynamicsPowerZone Routing:table
+@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Routing:table
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
@@ -10,7 +10,7 @@
 @model
 
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock)
+DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 

@@ -1,11 +1,14 @@
 @name OpenControl/loadcontrol
-@inputs Throttle Reverser DynamicNotch DynamicsPowerZone HandBrake [LOCOMOTIVE_DATA CONTROL_STAND_DATA Trucks SpanBolsters]:array
-@outputs Load MPH TrainWeight BE BEAuto Force TE VeV CarCount BEVLB Holding
+@inputs HandBrake [LOCOMOTIVE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA Trucks SpanBolsters]:array
+@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH TrainWeight BE BEAuto Force TE VeV CarCount BEVLB Holding
 @persist [E O W]:entity [SmoothTable]:table LastProps:array CEMF R MainGeneratorVoltage MaxGeneratorVoltage MaxGeneratorCurrent MaxDynamicCurrent MotorVoltage CircuitType CurrentBO
 @persist EngineRedlineRPM EngineIdleRPM NumNotches Horsepower CarCount Motors Axles Weight BEVLB MaxTractionMotorCurrent
 @persist TE V BHQ BaseSpeed TopSpeed Braking_Train Braking_Loco ClaspBrakes BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux
+@persist [AlarmBell]:string
 @trigger none
 @model
+
+LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -16,28 +19,30 @@ W = E:isWeldedTo()
 
 MainGeneratorVoltage = 0
 MaxGeneratorVoltage = 1500
-MaxGeneratorCurrent = 6000
+MaxGeneratorCurrent = CONFIGURATION_DATA[33,number]
 CircuitType = 4
 R = 0
 Current = 0
 CEMF = 0
 MotorVoltage = 0
-Motors = 6
+Motors = CONFIGURATION_DATA[34,number]
 
-MaxTractionMotorCurrent = 1500
-MaxDynamicCurrent = 700
+MaxTractionMotorCurrent = CONFIGURATION_DATA[36,number]
+MaxContinuousTractionMotorCurrent = CONFIGURATION_DATA[37,number]
+MaxDynamicCurrent = CONFIGURATION_DATA[39,number]
+MaxContinuousDynamicCurrent = CONFIGURATION_DATA[40,number]
 
-EngineIdleRPM = 200
-EngineRedlineRPM = 950
-NumNotches = 8
+EngineIdleRPM = CONFIGURATION_DATA[41,number]
+EngineRedlineRPM = CONFIGURATION_DATA[42,number]
+NumNotches = CONFIGURATION_DATA[43,number]
 
-Axles = 6
-Horsepower = 3600
-Weight = 420000
+Axles = CONFIGURATION_DATA[35,number]
+Horsepower = CONFIGURATION_DATA[44,number]
+Weight = CONFIGURATION_DATA[45,number]
 
-BaseSpeed = 71
-TopSpeed = 71
-ClaspBrakes = 1
+BaseSpeed = CONFIGURATION_DATA[46,number]
+TopSpeed = CONFIGURATION_DATA[47,number]
+ClaspBrakes = CONFIGURATION_DATA[48,number]
 BrakeMul = (775*2)
 MaxTrainBrakeForce = 0
 Holding = 0
@@ -45,6 +50,13 @@ AutoMux = 1
 BHQ = 0
 CarCount = 0
 
+AlarmBell = CONFIGURATION_DATA[32,string]
+
+#CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
+#CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff, #21
+#AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBell, #32
+#MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM, #41
+#EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes)
 
 function number smooth(Var,SmoothAmount,ID:string,DefaultVal){
     if(!SmoothTable:exists(ID)){
@@ -147,7 +159,7 @@ if(clk("checkcars")){
     LastProps = E:getConstraints()
 }
 
-local EngineRPMCal = (((EngineRedlineRPM-EngineIdleRPM)/NumNotches)*Throttle)
+local EngineRPMCal = (((EngineRedlineRPM-EngineIdleRPM)/NumNotches)*CONTROL_STAND_DATA[18,number])
 local EngineRPMSmoothed = smooth(EngineRPMCal,15,"enginerpmsmoothing",0)
 EngineRPM = EngineRPMSmoothed+EngineIdleRPM
 
@@ -156,13 +168,15 @@ V = -E:velL():z()
 MPH = toUnit("mph",abs(V))*4/3
 KPH = toUnit("km/h",abs(V))*4/3
 
+#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,
+#Independent_Bail,EmergencyBrake,DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch)
 
-if(Throttle>0){
+if(CONTROL_STAND_DATA[18,number]>0){
     GenEngineRPM = EngineRPMSmoothed+EngineIdleRPM
     MainGeneratorVoltage = (MaxGeneratorVoltage/(EngineRedlineRPM/GenEngineRPM))
     MotorVoltage = MainGeneratorVoltage
 }
-elseif(Throttle == 0){
+elseif(CONTROL_STAND_DATA[18,number] == 0){
     GenEngineRPM = EngineIdleRPM
     MainGeneratorVoltage = GenEngineRPM
     MotorVoltage = (CircuitType*CEMF)
@@ -170,14 +184,14 @@ elseif(Throttle == 0){
 
 local RampedMotorVoltage = MotorVoltage #smooth(MotorVoltage,5,"uh",0)
 
-if(DynamicNotch == 0){
+if(CONTROL_STAND_DATA[12,number] == 0){
     local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
     CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
     R = RampedMotorVoltage/CurrentNR
     
     CurrentBO = (CurrentNR/R)
 }
-elseif(DynamicNotch == 2){
+elseif(CONTROL_STAND_DATA[12,number] == 2){
     local GRID_RESISTOR_OHMS = 0.923
     local WheelDiameter = 40
     local WheelCircumference = WheelDiameter*pi()
@@ -186,7 +200,7 @@ elseif(DynamicNotch == 2){
     
     CEMF = 5+(MPH/(MaxTractionMotorCurrent))
     
-    local DBMotorVoltage = ((MaxDynamicCurrent/AxleRPM)*DynamicsPowerZone)*4
+    local DBMotorVoltage = ((MaxDynamicCurrent/AxleRPM)*CONTROL_STAND_DATA[14,number])*4
     local DBMotorCurrent = (DBMotorVoltage - (CircuitType*CEMF))
     
     CurrentBO = -(DBMotorCurrent/GRID_RESISTOR_OHMS)
@@ -285,10 +299,10 @@ elseif(MPH < BaseSpeed){
     TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.45+(MPH/15))
 }
 
-if(Reverser == 1){
-    Force = (TE*sign(Reverser) - abs(BE+BEAuto))
+if(CONTROL_STAND_DATA[16,number] == 1){
+    Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))
 }
-elseif(Reverser == 0){
+elseif(CONTROL_STAND_DATA[16,number] == 0){
     if(round(V)>0){
         Force = (abs(BE+BEAuto))*-1
     }
@@ -296,8 +310,8 @@ elseif(Reverser == 0){
         Force = (abs(BE+BEAuto))*1
     }
 }
-elseif(Reverser == -1){
-    Force = (TE*sign(Reverser) + abs(BE+BEAuto))
+elseif(CONTROL_STAND_DATA[16,number] == -1){
+    Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))
 }
 
 #W:applyForce(-E:up()*(Force/2))

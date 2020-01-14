@@ -55,13 +55,40 @@ if(first()){
     IndependentBailOn = "opencontrol/airbrakes/sa26/bail_off2.wav"
     IndependentBailOff = "opencontrol/airbrakes/sa26/bail_on2.wav"
 
-    # --// MISC //--
+    # --// Locomotive Settings //--
     
     TractionMotor = "gsgtrainsounds/wheels/delco_d77.wav"
     RadiatorFanStart = "gsgtrainsounds/misc/delco_radfan_loop.wav"
     RadiatorFanEnd = "gsgtrainsounds/misc/delco_radfan_end.wav"
     DynamicFanStart = "gsgtrainsounds/misc/delco_dynfan_loop.wav"
     DynamicFanEnd = "gsgtrainsounds/misc/delco_dynfan_end.wav"
+    
+    BrakeSqueal = "gsgtrainsounds/wheels/brake_3_loud.wav"
+    RollSoundWelded = "gsgtrainsounds/misc/wheels_welded.wav"
+    RollSoundJointed = "gsgtrainsounds/misc/wheels_jointed.wav"
+
+    AlarmBell = ""
+
+    MaxGeneratorCurrent = 6000
+    Motors = 6 #How many Traction Motors do you have?
+    Axles = 6 #How many Axles do you have?
+
+    MaxTractionMotorCurrent = 1500
+    MaxContinuousTractionMotorCurrent = 1050
+    TractionMotorType = 0 #0 for DC, 1 for AC
+    MaxDynamicCurrent = 700
+    MaxContinuousDynamicCurrent = 700
+
+    EngineIdleRPM = 200 #Engine IDLE Rpm - (leave as default if you dont know)
+    EngineRedlineRPM = 950 #Engine REDLINE (max) Rpm - (leave as default if you dont know)
+    NumNotches = 8 #Number of Notchs your control stand has. For US equipment this is (mostly) 8.
+
+    Horsepower = 3600 #Locomotive Horsepower
+    Weight = 420000 #Locomotive Weight (in LB)
+
+    BaseSpeed = 71 #The top speed that's considered "normal" for this locomotive.
+    TopSpeed = 65 #Top Speed, in Miles per Hour, that the locomotive is capable of reaching due to the gearing. If you don't know, put 65.
+    ClaspBrakes = 1 #Set to 1 if you have trucks fitted with Double Clasp or Triple Clasp brake cylinders.
 
     # --// Controls //--
 
@@ -110,7 +137,9 @@ foreach(K,V:string = Controls){
 }
 CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
 CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
-AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd)
+AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBell,
+MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM,
+EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes)
 
 CONFIGURATION_CONTROL_DATA = Controls
 CONFIGURATION_ROUTING_DATA = Routing

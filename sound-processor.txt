@@ -1,9 +1,10 @@
 @name OpenControl/sound-processor
-@inputs Locomotive:entity MPH Reverser Throttle DynamicBrakingPower EngineOn [CONFIGURATION_DATA]:array
+@inputs Locomotive:entity EngineOn [CONFIGURATION_DATA LOCOMOTIVE_CIRCUIT_DATA Trucks]:array
 @outputs
 @persist [Fan1Position Fan2Position Fan3Position DynamicFan1Position DynamicFan2Position]:vector Fans Dynamics DynamicFans
 @persist DynamicFansCA DynamicFansC1 DynamicFansCA2 DynamicFansC2 FansC1 FansC2 FansC3 FansCA1 FansCA2 FansCA3 FanSpeed
 @persist Temperature FuelSaver Tmax Horsepower AmbientLoss IdleHeat Run8Heat FanHeat F1_On F1_Off F2_On F2_Off F3_On F3_Off F1 F2 F3 Speed1 Speed2 Speed3 SpeedD
+@persist [E W O FrontTruck RearTruck]:entity DroneQ SquealQ RollQ RailType ClicketyQ MPH
 @trigger none
 @model
 
@@ -30,8 +31,9 @@ if(first()){
     DynamicFan2Position = vec(72,0,136)
     
     # --// MISC //--
-        
-    local FanTexture = "models/proppertextures/fan_generic"
+
+    local FanTexture = "models/proppertextures/fan_generic"        
+    RailType = 0 #0 for Continuous Welded Rail, 1 for Jointed (Jointed doesn't do anything yet!)
 
     
 if(Dynamics){
@@ -94,6 +96,10 @@ if(Fans!=0){
     }
 }
 
+E = entity()
+O = owner()
+W = E:isWeldedTo()
+
 AmbientLoss = 0
 F1_On = 40
 F1_Off = 20
@@ -112,9 +118,59 @@ Temperature = 0
 F1 = 0
 F2 = 0
 F3 = 0
+
+RollQ = 0
+DroneQ = 0
+ClicketyQ = 0
+SquealQ = 0
+
+local MaxDot = 0
+local MinDot = 0
+foreach(K,V:entity=Trucks){
+    local Dot = (V:pos()-W:pos()):dot(-E:up())
+    #print(Dot)
+    if(Dot>MaxDot){
+        MaxDot = Dot
+        FrontTruck = V
+    }
+    elseif(Dot<MinDot){
+        MinDot = Dot
+        RearTruck = V
+    }
+}
+
+function number linearRamp(RunRamp,RampSpeed){
+    local Var = 0
+
+    if(RunRamp){
+        if(Var<100){
+            Var += RampSpeed
+        }
+        if(Var>100){
+            Vat = 100
+        }
+    }
+    return Var
+}
+
+function number neglinearRamp(RunRamp,RampSpeed){
+    local Var = 100
+
+    if(RunRamp){
+        if(Var>0){
+            Var -= RampSpeed
+        }
+        if(Var<0){
+            Vat = 0
+        }
+    }
+    return Var
+}
 }
 
 interval(150)
+
+MPH = LOCOMOTIVE_CIRCUIT_DATA[3,number]
 
 if(EngineOn){
     if(Dynamics){
@@ -159,7 +215,10 @@ if(EngineOn){
         }
     }
     
-    local HeatAdded = IdleHeat + (abs(Reverser) ? 1 : 0.5)*Run8Heat*(Throttle+(DynamicBrakingPower/10))/100
+#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,
+#Independent_Bail,EmergencyBrake,DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch)
+
+    local HeatAdded = IdleHeat + (abs(CONTROL_STAND_DATA[16,number]) ? 1 : 0.5)*Run8Heat*(CONTROL_STAND_DATA[18,number]+(CONTROL_STAND_DATA[14,number]/10))/100
     local HeatRemoved = 5*(IdleHeat)*(F1 + F2 + F3)/(Fans) + AmbientLoss
     
     Temperature += (HeatAdded - HeatRemoved)/10
@@ -228,10 +287,73 @@ if(EngineOn){
         }
     }
 
+if(changed(DroneQ)&DroneQ){
+    Trucks[1,entity]:soundPlay("traction-motor1",0,CONFIGURATION_DATA[24,string])
+    Trucks[1,entity]:soundPlay("traction-motor2",0,CONFIGURATION_DATA[24,string])
+}   
+
+if((RollQ) & !DroneQ){
+    DroneQ = 1
+}
+elseif(!RollQ & DroneQ){
+    DroneQ = 0
+    soundStop("traction-motor1",0.1)
+    soundStop("traction-motor2",0.1)
+}
+
+if(DroneQ){
+    soundPitch("traction-motor1",100*MPH/40)
+    soundVolume("traction-motor1",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_CIRCUIT_DATA[2,number])/200,0.5,1))
+    soundPitch("traction-motor2",100*MPH/40)
+    soundVolume("traction-motor2",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_CIRCUIT_DATA[2,number])/200,0.5,1))
+}
+
+if((MPH>1) & !RollQ){
+    RollQ = 1
+    Locomotive:soundPlay("tracksound",0,RailType ? CONFIGURATION_DATA[31,string] : CONFIGURATION_DATA[30,string])
+}
+elseif((MPH<1) & RollQ){
+    RollQ = 0
+    soundStop("tracksound")
+}
+
+if(RollQ){
+    if(!RailType){
+        local LeadTruck = (V>0) ? FrontTruck : RearTruck
+        rangerFilter(W)
+        rangerFilter(LeadTruck)
+        local CCRanger = rangerOffset(128,LeadTruck:pos(),vec(0,0,-1))
+        local OnSwitch = (CCRanger:entity():type())==("prop_dynamic")
+        if(OnSwitch & !ClicketyQ){
+            ClicketyQ = 1
+            Locomotive:soundPlay("tracksound",0,CONFIGURATION_DATA[31,string])
+        }
+        elseif(!OnSwitch & ClicketyQ){
+            ClicketyQ = 0
+            Locomotive:soundPlay("tracksound",0,CONFIGURATION_DATA[30,string])
+        }
+    }
+    soundPitch("tracksound",MPH*3.3)
+}
+
+#LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train)
+
+local Braking_Train = LOCOMOTIVE_CIRCUIT_DATA[6,number]
+local Braking_Loco = LOCOMOTIVE_CIRCUIT_DATA[5,number]
+
+if(Braking_Loco & (inrange(MPH,0.5,8)) & !SquealQ){
+    SquealQ = 1
+    Locomotive:soundPlay("brakesqueal",0,CONFIGURATION_DATA[29,string])
+}
+elseif((!Braking_Loco | (!inrange(MPH,0.5,8))) & SquealQ){
+    SquealQ = 0
+    soundStop("brakesqueal",0.5)
+}
+
 } #End of EngineOn block
     
 #CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
 #CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
-#AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd)
+#AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed)
     
     

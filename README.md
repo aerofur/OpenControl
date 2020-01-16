@@ -55,7 +55,7 @@ We do not have an official *"Done by Date"*, OpenControl is a community contribu
 
 To be added.
 
-![OpenControl Locomotive Air System FIG1](/src/figs/PNG/OpenControl AIR SYSTEM FIG1.png)
+![OpenControl Locomotive Air System FIG1](/src/figs/PNG/airsytsemfig1.png)
 
 ## Developers & Contributors
 We are very grateful for your help with the Project, whether a one time contribution, multiple contributions, or longtime developer.

@@ -51,6 +51,11 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
 
 We do not have an official *"Done by Date"*, OpenControl is a community contribution based Project, and will not have a dead-end. However, we plan to have the first Beta release complete by, Mid-Late 2020. 
 
+## How it all works
+
+To be added.
+
+![OpenControl Locomotive Air System FIG1](/src/figs/PNG/OpenControl AIR SYSTEM FIG1.png)
 
 ## Developers & Contributors
 We are very grateful for your help with the Project, whether a one time contribution, multiple contributions, or longtime developer.

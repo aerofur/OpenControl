@@ -216,6 +216,10 @@ else{
     RampedMotorVoltage = 0    
 }
 
+#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
+#DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control,Isolation)
+
+
 if(CONTROL_STAND_DATA[19,number] == 1){
     if(CONTROL_STAND_DATA[21,number] == 1){
         if(CONTROL_STAND_DATA[24,number] == 1){

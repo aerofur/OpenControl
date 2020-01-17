@@ -1,9 +1,9 @@
 @name OpenControl/loadcontrol
 @inputs HandBrake GroundRelayReset [LOCOMOTIVE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA Trucks SpanBolsters]:array
-@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount Current MotorTemp DynamicTemp EngineRPM
+@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount Current MotorTemp DynamicTemp VeV TrainWeight
 @persist [E O W]:entity [SmoothTable]:table LastProps:array CEMF R MainGeneratorVoltage MaxGeneratorVoltage MotorVoltage CircuitType CurrentBO Current DBCurrent Load
 @persist TE V BHQ Braking_Train Braking_Loco BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux CarCount BEVLB TrainWeight
-@persist DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay DBArking TMArking FixNils RampedMotorVoltage EngineRPMCal DynoHPINCR
+@persist DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay DBArking TMArking FixNils RampedMotorVoltage EngineRPMCal DynoHPINCR FBWD FFWD
 @persist Motors MaxGeneratorCurrent MaxTractionMotorCurrent MaxContinuousTractionMotorCurrent MaxDynamicCurrent MaxContinuousDynamicCurrent EngineIdleRPM EngineRedlineRPM NumNotches Axles
 @persist Horsepower Weight BaseSpeed TopSpeed ClaspBrakes [AlarmBellStart AlarmBellEnd]:string
 @trigger none
@@ -513,30 +513,52 @@ elseif(MPH < BaseSpeed){
     TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.8*DynoHPINCR)
 }
 
+local VDiv = 100
+
 if(CONTROL_STAND_DATA[16,number] == 1){
-    if(round(V)>0){
+    
+    FBWD = 0
+    FFWD = 0
+    
+    if(round((V/VDiv))>0){
+        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
+    }
+    elseif(round((V/VDiv))<0){
         Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*-1
     }
-    elseif(round(V)<0){
+    elseif(round((V/VDiv)) == 0){
         Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
     }
 }
 elseif(CONTROL_STAND_DATA[16,number] == 0){
-    if(round(V)>0){
+    if(round((V/VDiv))>0){
         Force = (abs(BE+BEAuto))*-1
+        FFWD = 1
+        FBWD = 0
     }
-    elseif(round(V)<0){
+    elseif(round((V/VDiv))<0){
         Force = (abs(BE+BEAuto))*1
+        FFWD = 0
+        FBWD = 1
     }
 }
 elseif(CONTROL_STAND_DATA[16,number] == -1){
-    if(round(V)>0){
+
+    FBWD = 0
+    FFWD = 0
+
+    if(round((V/VDiv))>0){
         Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))*-1
     }
-    elseif(round(V)<0){
+    elseif(round((V/VDiv))<0){
         Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))*1
     }
+    elseif(round((V/VDiv)) == 0){
+        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
+    }
 }
+
+VeV = round((V/VDiv))
 
 #W:applyForce(-E:up()*(Force/2))
 

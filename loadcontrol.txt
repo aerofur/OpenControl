@@ -514,7 +514,12 @@ elseif(MPH < BaseSpeed){
 }
 
 if(CONTROL_STAND_DATA[16,number] == 1){
-    Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))
+    if(round(V)>0){
+        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*-1
+    }
+    elseif(round(V)<0){
+        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
+    }
 }
 elseif(CONTROL_STAND_DATA[16,number] == 0){
     if(round(V)>0){
@@ -525,7 +530,12 @@ elseif(CONTROL_STAND_DATA[16,number] == 0){
     }
 }
 elseif(CONTROL_STAND_DATA[16,number] == -1){
-    Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))
+    if(round(V)>0){
+        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))*-1
+    }
+    elseif(round(V)<0){
+        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))*1
+    }
 }
 
 #W:applyForce(-E:up()*(Force/2))

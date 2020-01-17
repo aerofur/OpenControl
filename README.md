@@ -57,6 +57,8 @@ To be added.
 
 ![OpenControl Locomotive Air System FIG1](/src/figs/PNG/opencontrol-airsytsemfig1.png)
 ![OpenControl Locomotive Traction Motor & Electrial System FIG1](/src/figs/PNG/opencontrol-tractioncircuitfig1.png)
+![OpenControl Locomotive Traction Curve](/src/figs/PNG/opencontrol-tractioncurve.png)
+![OpenControl Locomotive Current Curve](/src/figs/PNG/opencontrol-currentcurve.png)
 
 ## Developers & Contributors
 We are very grateful for your help with the Project, whether a one time contribution, multiple contributions, or longtime developer.

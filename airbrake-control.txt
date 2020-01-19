@@ -81,35 +81,34 @@ if((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 0){
 #DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRunLocal,GenFieldLocal,FuelPump,Control,Isolation,GroundRelayResetLocal,HandleOff)
 
 if(COMPEngineOn){
-    if(CONTROL_STAND_DATA[26,number] == 0){
-        if(CONTROL_STAND_DATA[7,number]){
-            if(Compressor){   
-                #local RoundedMR = round(MainReservoir)
-                #MainReservoir = RoundedMR
-                if(!PauseCOMP_EQing){
-                    if(round(MainReservoir)<140){
-                        MainReservoir += (CompressorTime*EqualizedHalfandHalf*CompRefill)
+    if(Compressor){   
+        if(CONTROL_STAND_DATA[28,number] == 0){
+            #local RoundedMR = round(MainReservoir)
+            #MainReservoir = RoundedMR
+            if(!PauseCOMP_EQing){
+                if(round(MainReservoir)<140){
+                    MainReservoir += (CompressorTime*EqualizedHalfandHalf*CompRefill)
+                }
+                elseif(MainReservoir>140){
+                    MainReservoir = 140      
+                }
+                #[
+                if(BrakePipeLocalAnglecock){
+                    if(TLBP_Equal){
+                        BrakeLinePumpLoss = 1    
                     }
-                    elseif(MainReservoir>140){
-                        MainReservoir = 140      
-                    }
-                    #[
-                    if(BrakePipeLocalAnglecock){
-                        if(TLBP_Equal){
-                            BrakeLinePumpLoss = 1    
-                        }
-                    }
-                    else{
+                }
+                else{
+                    BrakeLinePumpLoss = 0    
+                }
+                
+                if(BrakeLinePumpLoss){
+                    if(round(EqualizingReservoir) == 90){
                         BrakeLinePumpLoss = 0    
                     }
-                    
-                    if(BrakeLinePumpLoss){
-                        if(round(EqualizingReservoir) == 90){
-                            BrakeLinePumpLoss = 0    
-                        }
-                    }
-                    ]#
-            
+                }
+                ]#
+                if(CONTROL_STAND_DATA[7,number] == 1){
                     if(!Discharging_EQ){
                         if(EqualizingReservoir<CONTROL_STAND_DATA[4,number]){
                             EqualizedHalfandHalf = 0.25 #/ (BrakeLinePumpLoss ? (1+((TotalBPVol/35)-(BrakePipeLocalVol/35))) : 1)
@@ -126,13 +125,6 @@ if(COMPEngineOn){
                 }
             }
         }
-        else{
-            Compressor = 0
-        }
-    }
-    else{
-        Compressor = 0
-        COMPEngineOn = 0
     }
 }
 else{
@@ -213,6 +205,7 @@ if(changed(MainCharged) & MainCharged){
 }
 ]#
 #if(MainCharged & TopUpMainRes){   
+if(CONTROL_STAND_DATA[28,number] == 0){
     if(MainReservoir < 130){
         MRCO = 0
         Compressor = 1
@@ -225,7 +218,7 @@ if(changed(MainCharged) & MainCharged){
     if(inrange(round(MainReservoir),138,140)){
         MRCO = 1 
     }
-    
+    #[
     if(round(EqualizingReservoir) != CONTROL_STAND_DATA[4,number]){
         if(CONTROL_STAND_DATA[3,number] == 0){
             if(TLBP_Equal == 1){
@@ -239,13 +232,20 @@ if(changed(MainCharged) & MainCharged){
     else{
         EQCO = 1
     }
+    ]#
+    EQCO = 1
     
-    if(TLBP_Equal){
-        if(round(TrainLine)!=round(EqualizingReservoir)){
-            Compressor = 1
-            TLCO = 0
+    if(CONTROL_STAND_DATA[7,number] == 1){
+        if(TLBP_Equal){
+            if(round(TrainLine)!=round(EqualizingReservoir)){
+                Compressor = 1
+                TLCO = 0
+            }
+            elseif(round(TrainLine) == 90){
+                TLCO = 1    
+            }
         }
-        elseif(round(TrainLine) == 90){
+        else{
             TLCO = 1    
         }
     }
@@ -253,10 +253,13 @@ if(changed(MainCharged) & MainCharged){
         TLCO = 1    
     }
 
-
     if(MRCO & EQCO & TLCO){
         Compressor = 0   
     }
+}
+elseif(CONTROL_STAND_DATA[28,number] == 1){
+    Compressor = CONTROL_STAND_DATA[27,number]   
+}
     
 #}
 

@@ -453,7 +453,7 @@ if(CONTROL_STAND_DATA[7,number] == 1){
         BEAuto = 0    
     }
 }
-elseif(CONTROL_STAND_DATA[7,number] == 1){
+elseif(CONTROL_STAND_DATA[7,number] == 0){
     BEAuto = 0    
 }
 
@@ -469,7 +469,13 @@ if((LOCOMOTIVE_DATA[4,number]>10) & !BHQ & MPH<1.5){
     abRest(Trucks)
 }
 
-if(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & BHQ))){
+if(HandBrake){
+    Holding = 1
+    BHQ = 1
+    abRest(Trucks)    
+}
+
+if(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & !HandBrake & BHQ))){
     Holding = 0
     BHQ = 0
     abRelease()
@@ -520,12 +526,12 @@ if(MPH > BaseSpeed){
 }
 elseif(MPH < BaseSpeed){
     if(CONTROL_STAND_DATA[12,number] == 2){
-        DynoHPINCR = 5
+        DynoHPINCR = 3.5
     }
     elseif(CONTROL_STAND_DATA[12,number]<2){
         DynoHPINCR = 1
     }
-    TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.8*DynoHPINCR)
+    TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.35*DynoHPINCR)
 }
 
 if(BHQ){

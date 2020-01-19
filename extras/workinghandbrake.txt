@@ -1,0 +1,120 @@
+@name OpenControl/extras/workinghandbrake
+@inputs
+@outputs Handbrake
+@persist SmoothTable:table APKey RLKey HandBrakeAmmount
+@trigger none
+@model
+
+E = entity()
+
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+
+    A = 1
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, "models/gsgtrainprops/parts/brakewheel/brakewheel.mdl")
+    holoPos(A,E:toWorld(vec(0,0,2)))
+    holoAng(A,E:toWorld(ang(0,0,90)))
+    holoMaterial(A,"models/proppertextures/acrylic")
+
+function number smooth(Var,SmoothAmount,ID:string,DefaultVal){
+    if(!SmoothTable:exists(ID)){
+        SmoothTable[ID,number] = DefaultVal
+    }
+    local Smooth = SmoothTable[ID,number]    
+    Smooth += (Var-Smooth) / SmoothAmount
+    SmoothTable[ID,number] = Smooth
+    return Smooth
+}  
+
+Handbrake = 0
+}
+
+interval(150)
+
+runOnKeys(owner(),1)
+
+Eye = owner():eyeTrace():entity()
+
+if(owner():keyPressed("E") & !owner():keyPressed("lshift")){
+    APKey = 1
+    RLKey = 0
+}
+elseif(owner():keyPressed("E") & owner():keyPressed("lshift")){
+    APKey = 0
+    RLKey = 1
+}
+else{
+    APKey = 0
+    RLKey = 0
+}
+
+if(Eye == E){
+    if(APKey){
+        Apply = 1   
+        Release = 0
+    }    
+    elseif(RLKey){
+        Apply = 0
+        Release = 1    
+    }  
+    else{
+        Apply = 0
+        Release = 0   
+    }
+}
+
+local HBA = 35
+
+if(Apply){
+    if(HandBrakeAmmount<HBA){
+        HandBrakeAmmount += 1    
+    }
+    elseif(HandBrakeAmmount>HBA){
+        HandBrakeAmmount = 100  
+    }
+}
+elseif(Release){
+    if(HandBrakeAmmount>0){
+        HandBrakeAmmount -= 1    
+    }
+    elseif(HandBrakeAmmount<0){
+        HandBrakeAmmount = 0  
+    }
+}
+
+if(HandBrakeAmmount == HBA){
+    Handbrake = 1    
+}
+elseif(HandBrakeAmmount == 0){
+    Handbrake = 0    
+}
+
+if(changed(Apply)&Apply){
+    soundPlay("hbapply",0,"opencontrol/handbrakes/handbrake-wheel-apply.wav")
+}
+elseif(changed((HandBrakeAmmount == HBA))&(HandBrakeAmmount == HBA)){
+    soundStop("hbapply",0.2)    
+}
+elseif(changed(!Apply)&!Apply){
+    soundStop("hbapply",0.2)    
+}
+
+if(changed(Release)&Release){
+    soundPlay("hbrelease",0,"opencontrol/handbrakes/handbrake-wheel-release.wav")
+}
+elseif(changed((HandBrakeAmmount == 0))&(HandBrakeAmmount == 0)){
+    soundStop("hbrelease",0.2)    
+}
+elseif(changed(!Release)&!Release){
+    soundStop("hbrelease",0.2)    
+}
+
+#opencontrol/handbrakes/handbrake-wheel-apply.wav
+#opencontrol/handbrakes/handbrake-wheel-release.wav
+
+local HBPS = smooth((HandBrakeAmmount*100),3,"smoothing",0)
+holoAng(1,E:toWorld(ang(0,0-HBPS,90)))

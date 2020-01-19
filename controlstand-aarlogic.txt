@@ -1,31 +1,166 @@
 @name OpenControl/controlstand-aarlogic
-@inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout UsingRearSeat InsertReverser Horn 
-@inputs [LOCOMOTIVE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
-@outputs [CONTROL_STAND_DATA]:array ReverserRemoved Routing:table
-@persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string
+@inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout GroundRelayReset UsingRearSeat InsertReverser Horn 
+@inputs [MU_Front_In MU_Rear_In LOCOMOTIVE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA LOCOMOTIVE_CIRCUIT_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
+@outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table
+@persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string ThrottleA ThrottleB ThrottleC ThrottleD
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
-@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake
-@persist Notch UnNotchThrottleF UnNotchThrottleB Reverser ReverserLocal HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock
-@persist DynamicNotchLocal DynamicsSetupLocal DynamicsPowerZoneLocal DynamicUnlockLocal NotchLocal Isolation
+@persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake HandleOff
+@persist Notch UnNotchThrottleF UnNotchThrottleB Reverser ReverserLocal HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock 
+@persist DynamicNotchLocal DynamicsSetupLocal DynamicsPowerZoneLocal DynamicUnlockLocal NotchLocal Isolation EngineRunLocal GenFieldLocal GroundRelayResetLocal DBWarning MUReverserFW MUReverserBW
 @trigger none 
 @model
 
-if(BatteryKnife){
-    if(Control){
-        if(FuelPump){
-            Notch = NotchLocal
+local MU = (->MU_Front_In | ->MU_Rear_In)
+local MUing = (->MU_Front_Out | ->MU_Rear_Out)
+
+if(MU & !MUing){
+    if(!Control & !EngineRun & !GenField & !FuelPump){
+        if(->MU_Front_In){
+            Reverser = (MU_Front_In[8,number] - MU_Front_In[9,number])
+            DynamicNotch = MU_Front_In[1,number]
+            DynamicsSetup = MU_Front_In[21,number]
+            DynamicsPowerZone = MU_Front_In[24,number]
+            DynamicUnlock = 0 
+            Notch = MU_Front_In[15,number] + MU_Front_In[12,number] + MU_Front_In[7,number] + MU_Front_In[3,number]
+            EngineRunLocal = MU_Front_In[16,number]
+            GenFieldLocal = MU_Front_In[6,number]
+            GroundRelayResetLocal = MU_Front_In[26,number]
+            DBWarning = MU_Front_In[20,number]
         }
-        Reverser = ReverserLocal
-        DynamicNotch = DynamicNotchLocal
-        DynamicsSetup = DynamicsSetupLocal
-        DynamicsPowerZone = DynamicsPowerZoneLocal
-        DynamicUnlock = DynamicUnlockLocal
-    }    
-    elseif(!Control){
-        if(!FuelPump){
+        elseif(->MU_Rear_In){
+            Reverser = -(MU_Rear_In[8,number] - MU_Rear_In[9,number])
+            DynamicNotch = MU_Rear_In[1,number]
+            DynamicsSetup = MU_Rear_In[21,number]
+            DynamicsPowerZone = MU_Rear_In[24,number]
+            DynamicUnlock = 0 
+            Notch = MU_Rear_In[15,number] + MU_Rear_In[12,number] + MU_Rear_In[7,number] + MU_Rear_In[3,number]
+            EngineRunLocal = MU_Rear_In[16,number]
+            GenFieldLocal = MU_Rear_In[6,number]
+            GroundRelayResetLocal = MU_Rear_In[26,number]
+            DBWarning = MU_Rear_In[20,number]
+        }
+        else{
             Notch = 0
+            Reverser = 0
+            DynamicNotch = 0
+            DynamicsSetup = 0
+            DynamicsPowerZone = 0
+            DynamicUnlock = 0    
+            EngineRunLocal = EngineRun
+            GenFieldLocal = GenField
         }
+    }
+}
+else{
+    EngineRunLocal = EngineRun
+    GenFieldLocal = GenField    
+}
+
+switch(Notch){
+    case 0,
+        ThrottleA = 0
+        ThrottleB = 0
+        ThrottleC = 0
+        ThrottleD = 0
+    break  
+    case 1,
+        ThrottleA = 1
+        ThrottleB = 0
+        ThrottleC = 0
+        ThrottleD = 0
+    break    
+    case 2,
+        ThrottleA = 2
+        ThrottleB = 0
+        ThrottleC = 0
+        ThrottleD = 0
+    break    
+    case 3,
+        ThrottleA = 2
+        ThrottleB = 1
+        ThrottleC = 0
+        ThrottleD = 0
+    break    
+    case 4,
+        ThrottleA = 2
+        ThrottleB = 2
+        ThrottleC = 0
+        ThrottleD = 0
+    break    
+    case 5,
+        ThrottleA = 2
+        ThrottleB = 2
+        ThrottleC = 1
+        ThrottleD = 0
+    break    
+    case 6,
+        ThrottleA = 2
+        ThrottleB = 2
+        ThrottleC = 2
+        ThrottleD = 0
+    break    
+    case 7,
+        ThrottleA = 2
+        ThrottleB = 2
+        ThrottleC = 2
+        ThrottleD = 1
+    break    
+    case 8,
+        ThrottleA = 2
+        ThrottleB = 2
+        ThrottleC = 2
+        ThrottleD = 2
+    break    
+}
+
+#LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train,V,E,O,W,DynamicTemp,MotorTemp,DynamicShort,MotorShort,GroundRelay,DynamicBrakeWarning)
+
+if(Reverser == 1){
+    MUReverserFW = 1
+    MUReverserBW = 0  
+}
+elseif(Reverser == 0){
+    MUReverserFW = 0
+    MUReverserBW = 0
+}
+elseif(Reverser == -1){
+    MUReverserFW = 0
+    MUReverserBW = 1  
+}
+
+
+if(!MU & MUing){
+    MU_Rear_Out = array(0,LOCOMOTIVE_CIRCUIT_DATA[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
+    0,0,ThrottleB,0,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,0,DynamicsSetup,LOCOMOTIVE_CIRCUIT_DATA[2,number],LOCOMOTIVE_CIRCUIT_DATA[2,number],DBWarning,
+    DynamicsPowerZone,0,GroundRelayResetLocal,0)
+}
+
+if(!MU){
+    if(BatteryKnife){
+        if(Control){
+            if(FuelPump){
+                Notch = NotchLocal
+            }
+            Reverser = ReverserLocal
+            DynamicNotch = DynamicNotchLocal
+            DynamicsSetup = DynamicsSetupLocal
+            DynamicsPowerZone = DynamicsPowerZoneLocal
+            DynamicUnlock = DynamicUnlockLocal
+        }    
+        elseif(!Control){
+            if(!FuelPump){
+                Notch = 0
+            }
+            Reverser = 0
+            DynamicNotch = 0
+            DynamicsSetup = 0
+            DynamicsPowerZone = 0
+            DynamicUnlock = 0
+        }    
+    }
+    elseif(!BatteryKnife){
+        Notch = 0
         Reverser = 0
         DynamicNotch = 0
         DynamicsSetup = 0
@@ -33,14 +168,6 @@ if(BatteryKnife){
         DynamicUnlock = 0
     }    
 }
-elseif(!BatteryKnife){
-    Notch = 0
-    Reverser = 0
-    DynamicNotch = 0
-    DynamicsSetup = 0
-    DynamicsPowerZone = 0
-    DynamicUnlock = 0
-}    
 
 if((ENGINE_SOUND_DATA[11,number] | ENGINE_SOUND_DATA[12,number]) == 1){
     Isolation = 1
@@ -49,8 +176,22 @@ elseif((ENGINE_SOUND_DATA[11,number] | ENGINE_SOUND_DATA[12,number]) == 0){
     Isolation = 0    
 }
 
+if(GroundRelayReset){
+    GroundRelayResetLocal = 1
+}
+else{
+    GroundRelayResetLocal = GroundRelayResetLocal    
+}
+
+if(LOCOMOTIVE_CIRCUIT_DATA[16,number]){
+    DBWarning = 1        
+}
+elseif(LOCOMOTIVE_CIRCUIT_DATA[16,number] == 0){
+    DBWarning = 0  
+}
+
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control,Isolation)
+DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRunLocal,GenFieldLocal,FuelPump,Control,Isolation,GroundRelayResetLocal,HandleOff)
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -253,7 +394,7 @@ if(ReverserLocal!=0){
                 }
             }
         }
-        if(DynamicNotchLocal == 1){
+        if(DynamicNotchLocal>0){
             DynamicsSetupLocal = 1    
         }
         elseif(DynamicNotchLocal == 0){
@@ -317,22 +458,26 @@ if(CONFIGURATION_DATA[22,number]<2){
             ControlStand:setBodygroup(4,0)
             AutomaticPressureSet = 90
             Suppression = 0
+            HandleOff = 0
         break
         case 1,
             ControlStand:setBodygroup(4,1)
             AutomaticPressureSet = 80
             Suppression = 0
+            HandleOff = 0
         break
         case 2,
             ControlStand:setBodygroup(4,2+round((ServiceZone*(50/20))/10))
             AutomaticPressureSet = 80-ServiceZone
             Suppression = 0
+            HandleOff = 0
         break
         case 3,
             ControlStand:setBodygroup(4,8)
             if(!LocalEmergency){
                 Suppression = 1
             }
+            HandleOff = 0
         break
         case 4,
             ControlStand:setBodygroup(4,10)
@@ -340,6 +485,7 @@ if(CONFIGURATION_DATA[22,number]<2){
             if(BrakeCutout<1){
             AutomaticPressureSet = 0
             }
+            HandleOff = 1
         break
         case 5,
             ControlStand:setBodygroup(4,11)
@@ -347,6 +493,7 @@ if(CONFIGURATION_DATA[22,number]<2){
             LocalEmergency = 1
             Suppression = 1
             Emergency = 1
+            HandleOff = 0
         break
     }
 }

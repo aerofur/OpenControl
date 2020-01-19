@@ -1,6 +1,6 @@
 @name OpenControl/loadcontrol
-@inputs HandBrake GroundRelayReset [LOCOMOTIVE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA Trucks SpanBolsters]:array
-@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount Current MotorTemp DynamicTemp VeV TrainWeight
+@inputs HandBrake [LOCOMOTIVE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA Trucks SpanBolsters]:array
+@outputs [LOCOMOTIVE_CIRCUIT_DATA]:array Load MPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount Current MotorTemp DynamicTemp VeV TrainWeight BEF BEAutoF
 @persist [E O W]:entity [SmoothTable]:table LastProps:array CEMF R MainGeneratorVoltage MaxGeneratorVoltage MotorVoltage CircuitType CurrentBO Current DBCurrent Load
 @persist TE V BHQ Braking_Train Braking_Loco BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux CarCount BEVLB TrainWeight
 @persist DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay DBArking TMArking FixNils RampedMotorVoltage EngineRPMCal DynoHPINCR FBWD FFWD
@@ -406,10 +406,13 @@ if(changed(MotorShort)&MotorShort){
 if(changed(GroundRelay)&GroundRelay){
     W:soundPlay("LocomotiveAlarmBell",0,AlarmBellStart)
 }
-elseif(changed(GroundRelayReset)&GroundRelayReset){
+elseif(changed(CONTROL_STAND_DATA[25,number])&CONTROL_STAND_DATA[25,number]){
     GroundRelay = 0
     W:soundPlay("LocomotiveAlarmBell",0,AlarmBellEnd)
 }
+
+#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
+#DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRunLocal,GenFieldLocal,FuelPump,Control,Isolation,GroundRelayResetLocal)
 
 #LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch)
 
@@ -432,15 +435,25 @@ elseif((!Holding & round(LOCOMOTIVE_DATA[3,number])>89)){
     AutoMux = 0    
 }
 
-if(round(LOCOMOTIVE_DATA[3,number])<90){
-    if(MaxTrainBrakeForce == 0){
-        BEAuto = (round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 150000)
+if(CONTROL_STAND_DATA[7,number] == 1){
+    if(CONTROL_STAND_DATA[26,number] == 0){
+        if(round(LOCOMOTIVE_DATA[3,number])<89){
+            if(MaxTrainBrakeForce == 0){
+                BEAuto = (round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 150000)
+            }
+            elseif(MaxTrainBrakeForce>0){
+                BEAuto = MaxTrainBrakeForce*(round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 40)
+            }
+        }
+        elseif(round(LOCOMOTIVE_DATA[3,number])>89){
+            BEAuto = 0    
+        }
     }
-    elseif(MaxTrainBrakeForce>0){
-        BEAuto = MaxTrainBrakeForce*(round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 40)
+    elseif(CONTROL_STAND_DATA[26,number] == 1){
+        BEAuto = 0    
     }
 }
-elseif(round(LOCOMOTIVE_DATA[3,number])>89){
+elseif(CONTROL_STAND_DATA[7,number] == 1){
     BEAuto = 0    
 }
 
@@ -449,12 +462,14 @@ if((LOCOMOTIVE_DATA[2,number]<85 & !BHQ & MPH<1.5)){
     BHQ = 1
     abRest(Trucks)
 }
+
 if((LOCOMOTIVE_DATA[4,number]>10) & !BHQ & MPH<1.5){
     Holding = 1
     BHQ = 1
     abRest(Trucks)
 }
-elseif(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & BHQ))){
+
+if(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & BHQ))){
     Holding = 0
     BHQ = 0
     abRelease()
@@ -513,65 +528,21 @@ elseif(MPH < BaseSpeed){
     TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.8*DynoHPINCR)
 }
 
-local VDiv = 100
-
-if(CONTROL_STAND_DATA[16,number] == 1){
-    
-    FBWD = 0
-    FFWD = 0
-    
-    if(round((V/VDiv))>0){
-        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
-    }
-    elseif(round((V/VDiv))<0){
-        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*-1
-    }
-    elseif(round((V/VDiv)) == 0){
-        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
-    }
-}
-elseif(CONTROL_STAND_DATA[16,number] == 0){
-    if(round((V/VDiv))>0){
-        Force = (abs(BE+BEAuto))*-1
-        FFWD = 1
-        FBWD = 0
-    }
-    elseif(round((V/VDiv))<0){
-        Force = (abs(BE+BEAuto))*1
-        FFWD = 0
-        FBWD = 1
-    }
-}
-elseif(CONTROL_STAND_DATA[16,number] == -1){
-
-    FBWD = 0
-    FFWD = 0
-
-    if(round((V/VDiv))>0){
-        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))*-1
-    }
-    elseif(round((V/VDiv))<0){
-        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) + abs(BE+BEAuto))*1
-    }
-    elseif(round((V/VDiv)) == 0){
-        Force = (TE*sign(CONTROL_STAND_DATA[16,number]) - abs(BE+BEAuto))*1
-    }
+if(BHQ){
+    TE = 0
 }
 
-VeV = round((V/VDiv))
+BEF = sign(V)*(MPH>0.5)*abs(BE)
+BEAutoF = sign(V)*(MPH>0.5)*abs(BEAuto)
+local TELocal = TE*sign(CONTROL_STAND_DATA[16,number])
+local BEForce = BEF + BEAutoF
 
-#W:applyForce(-E:up()*(Force/2))
+if((TE!=0) | (BEForce!=0)){
+    Force = TELocal - BEForce
+    W:applyForce(-E:up()*(Force/2))
+}
 
-#if(DynamicNotch == 0){
-if(BHQ){ TE = 0 }
-#BE = sign(V)*(MPH>0.5)*BE
-#BEAuto = sign(V)*(MPH>0.5)*BE
-#if((TE!=0) | ((BE | BEAuto)!=0)){
-W:applyForce(-E:up()*(Force/2))
-#}
-#}
-
-LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train,V,E,O,W)
+LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train,V,E,O,W,DynamicTemp,MotorTemp,DynamicShort,MotorShort,GroundRelay,DynamicBrakeWarning)
 
 
 

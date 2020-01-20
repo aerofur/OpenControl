@@ -1,18 +1,19 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout GroundRelayReset UsingRearSeat InsertReverser Horn 
 @inputs [MU_Front_In MU_Rear_In LOCOMOTIVE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA LOCOMOTIVE_CIRCUIT_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
-@outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table
+@outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table MUCompressor DynamicNotch DynamicsSetup DynamicsPowerZone
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string ThrottleA ThrottleB ThrottleC ThrottleD
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
 @persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake HandleOff
 @persist Notch UnNotchThrottleF UnNotchThrottleB Reverser ReverserLocal HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock 
 @persist DynamicNotchLocal DynamicsSetupLocal DynamicsPowerZoneLocal DynamicUnlockLocal NotchLocal Isolation EngineRunLocal GenFieldLocal GroundRelayResetLocal DBWarning MUReverserFW MUReverserBW
+@persist MUCompressor MU MUing
 @trigger none 
 @model
 
-local MU = (->MU_Front_In | ->MU_Rear_In)
-local MUing = (->MU_Front_Out | ->MU_Rear_Out)
+MU = (->MU_Front_In | ->MU_Rear_In)
+MUing = (->MU_Front_Out | ->MU_Rear_Out)
 
 if(MU & !MUing){
     if(!Control & !EngineRun & !GenField & !FuelPump){
@@ -51,12 +52,14 @@ if(MU & !MUing){
             DynamicUnlock = 0    
             EngineRunLocal = EngineRun
             GenFieldLocal = GenField
+            MUCompressor = 0
         }
     }
 }
 else{
     EngineRunLocal = EngineRun
     GenFieldLocal = GenField    
+    MUCompressor = 0
 }
 
 switch(Notch){
@@ -134,7 +137,7 @@ elseif(Reverser == -1){
 
 if(!MU & MUing){
     MU_Rear_Out = array(0,LOCOMOTIVE_CIRCUIT_DATA[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
-    0,0,ThrottleB,0,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,DBWarning,LOCOMOTIVE_CIRCUIT_DATA[2,number],LOCOMOTIVE_DATA[10,number],0,DynamicNotchLocal,0,GroundRelayResetLocal,0)
+    0,0,ThrottleB,0,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,DBWarning,DynamicNotchLocal,LOCOMOTIVE_DATA[10,number],0,DynamicsPowerZone,0,GroundRelayResetLocal,0)
 }
 
 if(!MU){

@@ -70,6 +70,9 @@ For most US engines, this is normalised to 600VDC.
  * A Generator, is a motor running in reverse. When you apply a current to the windings of a motor, a magnetic field is induced in the armature of the motor. This magnetic field causes the armature to spin. *(simplified explanation)*.
 If you run the motor in reverse, then you will induce a current in the motor windings.
 
+![Motor GIF](/src/figs/GIF/motor.gif)
+*GIF provided from Wikipedia, https://en.wikipedia.org/wiki/Electric_motor#/media/File:Electric_motor.gif*
+
  * Back electromotive force (Back EMF, BEMF) is a voltage that appears in the opposite direction to current flow as a result of the motor's coils moving relative to a magnetic field.
 
 Once we have the Voltage of the Generator, we apply this to the Traction Motors.

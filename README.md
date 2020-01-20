@@ -71,6 +71,7 @@ For most US engines, this is normalised to 600VDC.
 If you run the motor in reverse, then you will induce a current in the motor windings.
 
 ![Motor GIF](/src/figs/GIF/motor.gif)
+
 *GIF provided from Wikipedia, https://en.wikipedia.org/wiki/Electric_motor#/media/File:Electric_motor.gif*
 
  * Back electromotive force (Back EMF, BEMF) is a voltage that appears in the opposite direction to current flow as a result of the motor's coils moving relative to a magnetic field.

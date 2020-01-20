@@ -51,7 +51,7 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
 
 We do not have an official *"Done by Date"*, OpenControl is a community contribution based Project, and will not have a dead-end. However, we plan to have the first Beta release complete by, Mid-Late 2020.
 
-![OpenControl Timeline](/src/figs/PNG/developertimeline.png)
+
 
 ## How it all works
 

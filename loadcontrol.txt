@@ -188,6 +188,29 @@ KPH = toUnit("km/h",abs(V))*4/3
 
 #ENGINE_SOUND_DATA = array(Primed1,Primed2,PrimerSet1,PrimerSet2,Clag1,Clag2,On1,On2,EngineNotch1,EngineSpeed1,Isolation1,Isolation2)
 
+local HasSelector = CONFIGURATION_DATA[2,number]
+
+if(HasSelector){
+    if(CONTROL_STAND_DATA[29,number] == 0){
+        CircuitType = 0
+    }
+    elseif(CONTROL_STAND_DATA[29,number] == 1){
+        CircuitType = 1
+    }
+    elseif(CONTROL_STAND_DATA[29,number] == 2){
+        CircuitType = 2
+    }
+    elseif(CONTROL_STAND_DATA[29,number] == 3){
+        CircuitType = 3
+    }
+    elseif(CONTROL_STAND_DATA[29,number] == 4){
+        CircuitType = 4
+    }
+    elseif(CONTROL_STAND_DATA[29,number] == 5){
+        CircuitType = 4
+    }
+}
+
 if(CONTROL_STAND_DATA[24,number] == 1){
     if(CONTROL_STAND_DATA[18,number]>0){
         GenEngineRPM = EngineRPMSmoothed+EngineIdleRPM
@@ -216,57 +239,65 @@ else{
     RampedMotorVoltage = 0    
 }
 
-#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-#DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control,Isolation)
+#[
+CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
+DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRunLocal,GenFieldLocal,FuelPump,Control,Isolation,GroundRelayResetLocal,HandleOff,MUCompressor,
+IsLead,SelectorNotch)
+]#
 
-
-if(CONTROL_STAND_DATA[19,number] == 1){
-    if(CONTROL_STAND_DATA[21,number] == 1){
-        if(CONTROL_STAND_DATA[24,number] == 1){
-            if(CONTROL_STAND_DATA[16,number] != 0){
-    
-                if(CONTROL_STAND_DATA[12,number] == 0){
-                    if(CONTROL_STAND_DATA[18,number]>0){
-                        local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
-                        CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
-                        R = RampedMotorVoltage/CurrentNR
-                        
-                        if(!MotorShort & !GroundRelay){
-                            CurrentBO = (CurrentNR/R)
+if(HasSelector == 0){
+    if(CONTROL_STAND_DATA[19,number] == 1){
+        if(CONTROL_STAND_DATA[21,number] == 1){
+            if(CONTROL_STAND_DATA[24,number] == 1){
+                if(CONTROL_STAND_DATA[16,number] != 0){
+                    if(CONTROL_STAND_DATA[12,number] == 0){
+                        if(CONTROL_STAND_DATA[18,number]>0){
+                            local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
+                            CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
+                            R = RampedMotorVoltage/CurrentNR
+                            
+                            if(!MotorShort & !GroundRelay){
+                                CurrentBO = (CurrentNR/R)
+                            }
+                            elseif(MotorShort | GroundRelay){
+                                CurrentBO = 0
+                            }
                         }
-                        elseif(MotorShort | GroundRelay){
-                            CurrentBO = 0
+                        elseif(CONTROL_STAND_DATA[18,number] == 0){
+                            CurrentBO = 0    
                         }
                     }
-                    elseif(CONTROL_STAND_DATA[18,number] == 0){
-                        CurrentBO = 0    
+                    elseif(CONTROL_STAND_DATA[12,number] == 2){
+                        if(CONTROL_STAND_DATA[18,number] == 0){
+                            local GRID_RESISTOR_OHMS = 0.923
+                            local WheelDiameter = 40
+                            local WheelCircumference = WheelDiameter*pi()
+                            local IPH = MPH*(12*5280)
+                            local AxleRPM = (IPH/60)/WheelCircumference
+                            
+                            #print(AxleRPM:toString())
+                            
+                            CEMF = 0+(MPH/TopSpeed)
+                            
+                            local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*CONTROL_STAND_DATA[14,number])*100
+                            local DBMotorCurrent = ((DBMotorVoltage-CircuitType) * CEMF)
+                            
+                            if(!DynamicShort & !GroundRelay){
+                                CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
+                            }
+                            elseif(DynamicShort | GroundRelay){
+                                CurrentBO = 0
+                            }
+                        }
+                    }
+                    elseif(CONTROL_STAND_DATA[12,number]<2){
+                        CurrentBO = 0       
                     }
                 }
-                elseif(CONTROL_STAND_DATA[12,number] == 2){
-                    if(CONTROL_STAND_DATA[18,number] == 0){
-                        local GRID_RESISTOR_OHMS = 0.923
-                        local WheelDiameter = 40
-                        local WheelCircumference = WheelDiameter*pi()
-                        local IPH = MPH*(12*5280)
-                        local AxleRPM = (IPH/60)/WheelCircumference
-                        
-                        #print(AxleRPM:toString())
-                        
-                        CEMF = 0+(MPH/TopSpeed)
-                        
-                        local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*CONTROL_STAND_DATA[14,number])*100
-                        local DBMotorCurrent = ((DBMotorVoltage-CircuitType) * CEMF)
-                        
-                        if(!DynamicShort & !GroundRelay){
-                            CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
-                        }
-                        elseif(DynamicShort | GroundRelay){
-                            CurrentBO = 0
-                        }
-                    }
-                }
-                elseif(CONTROL_STAND_DATA[12,number]<2){
-                    CurrentBO = 0       
+                else{
+                    CurrentBO = 0  
+                    Current = 0     
+                    TE = 0
                 }
             }
             else{
@@ -287,10 +318,75 @@ if(CONTROL_STAND_DATA[19,number] == 1){
         TE = 0
     }
 }
-else{
-    CurrentBO = 0  
-    Current = 0     
-    TE = 0
+elseif(HasSelector == 1){
+    if(CONTROL_STAND_DATA[19,number] == 1){
+        if(CONTROL_STAND_DATA[21,number] == 1){
+            if(CONTROL_STAND_DATA[24,number] == 1){
+                if(CONTROL_STAND_DATA[16,number] != 0){
+                    if(CONTROL_STAND_DATA[29,number] == inrange(CONTROL_STAND_DATA[29,number],1,4)){
+                        if(CONTROL_STAND_DATA[18,number]>0){
+                            local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
+                            CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
+                            R = RampedMotorVoltage/CurrentNR
+                            
+                            if(!MotorShort & !GroundRelay){
+                                CurrentBO = (CurrentNR/R)
+                            }
+                            elseif(MotorShort | GroundRelay){
+                                CurrentBO = 0
+                            }
+                        }
+                        elseif(CONTROL_STAND_DATA[18,number] == 0){
+                            CurrentBO = 0    
+                        }
+                    }
+                    elseif(CONTROL_STAND_DATA[29,number] == 5){
+                            local GRID_RESISTOR_OHMS = 0.923
+                            local WheelDiameter = 40
+                            local WheelCircumference = WheelDiameter*pi()
+                            local IPH = MPH*(12*5280)
+                            local AxleRPM = (IPH/60)/WheelCircumference
+
+                            CEMF = 0+(MPH/TopSpeed)
+                            
+                            local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*(CONTROL_STAND_DATA[18,number]*10))*100
+                            local DBMotorCurrent = ((DBMotorVoltage-CircuitType) * CEMF)
+                            
+                            if(!DynamicShort & !GroundRelay){
+                                CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
+                            }
+                            elseif(DynamicShort | GroundRelay){
+                                CurrentBO = 0
+                            }
+                    }
+                    elseif(CONTROL_STAND_DATA[29,number] == 0){
+                        CurrentBO = 0
+                        Current = 0 
+                    }
+                }
+                else{
+                    CurrentBO = 0  
+                    Current = 0     
+                    TE = 0
+                }
+            }
+            else{
+                CurrentBO = 0  
+                Current = 0     
+                TE = 0
+            }
+        }
+        else{
+            CurrentBO = 0  
+            Current = 0     
+            TE = 0
+        }
+    }
+    else{
+        CurrentBO = 0  
+        Current = 0     
+        TE = 0
+    }
 }
 #elseif((!CONTROL_STAND_DATA[18,number] == 0) | !(CONTROL_STAND_DATA[21,number] == 1) | !(CONTROL_STAND_DATA[24,number] == 1)){
 #    CurrentBO = 0  

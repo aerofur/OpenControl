@@ -519,7 +519,7 @@ if(LOCOMOTIVE_DATA[4,number]<10){
     BE = 0
 }
 elseif(LOCOMOTIVE_DATA[4,number]>10){
-    BEVLB = 30000*(abs((LOCOMOTIVE_DATA[4,number]))/65)
+    BEVLB = 80000*(abs((LOCOMOTIVE_DATA[4,number]))/65)
     BE = (LOCOMOTIVE_DATA[4,number]*(Holding ? 0 : BEVLB*(ClaspBrakes ? 1.25 : 1)))
 }
 
@@ -571,7 +571,14 @@ if(HandBrake){
     abRest(Trucks)    
 }
 
+local Overcome = (abs(TE) - BE)>0
+
 if(((LOCOMOTIVE_DATA[2,number]>85 & LOCOMOTIVE_DATA[4,number]<10 & !HandBrake & BHQ))){
+    Holding = 0
+    BHQ = 0
+    abRelease()
+}
+elseif(Overcome == 1){
     Holding = 0
     BHQ = 0
     abRelease()

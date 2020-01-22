@@ -531,7 +531,7 @@ elseif(MPH < BaseSpeed){
     elseif(CONTROL_STAND_DATA[12,number]<2){
         DynoHPINCR = 1
     }
-    TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.35*DynoHPINCR)
+    TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(1*DynoHPINCR)
 }
 
 if(BHQ){

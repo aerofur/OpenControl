@@ -1,0 +1,284 @@
+@name OpenControl/extras/AirHoseRIGHT
+@inputs [In DoNotWireIn]:array
+@outputs Out:array Wired [DoNotWireOut VerifyR]:array
+@persist MUModel:string RopeMat:string [O E]:entity GTable:gtable GCTable:table PressedE PressedR LinkStage BeingLinked Checking WonTourney 
+@persist PlugMsgCancel EorRUnlink Unlinking
+@trigger
+@model models/lazpack/detail/mu_3hose_right.mdl
+
+if(first() | dupefinished()){
+    
+    #Works like a normal plug with wiring. Wire your In and Out. 
+    #Press E on a plug with the crowbar out to start the linking process.
+    #Click E on the other plug.
+    
+    # !!Unlike the MU Type of this, this //CAN// be parented!!
+    
+    local MUHoseTYPE = 1 #What Default Bodygroup do you want?
+    
+    EorRUnlink = 0 #Whether or not E unlinks a connected plug. E is 1, R is 0.
+
+    # All credit to Monkatraz for all the base code, I could make my own one, isnt that hard but this works for now.
+    
+    O = owner()
+    E = entity()
+    
+    HoloTable = table(
+    array(vec(0,0,0),ang(0,0,0),vec(1,1,1),"models/lazpack/detail/mu_3hose_right.mdl",vec(0,9.7,-2.3))
+    )  
+    
+    for(N=1, HoloTable:count()){
+        if(E:model() == HoloTable[N,array][4,string]){
+            local HTR = HoloTable[N,array]
+            RopePos = HTR[5,vector]
+            MUModel = HTR[4,string]   
+        }
+    }
+    
+    E:setBodygroup(1,3)
+    
+    A = 1
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, MUModel)
+    holoPos(A,E:toWorld(vec(0,0,0)))
+    holoAng(A,E:toWorld(ang(0,0,0)))    
+    holoEntity(A):setSubMaterial(1,"models/proppertextures/invisible") 
+    holoBodygroup(A,1,MUHoseTYPE)
+    
+    #init
+    
+    runOnLast(1)
+    VerifyR = array("mmuplug", RopePos, E)
+    
+    
+    #send ID to gtable for ID tournament
+    GTable = gTable("tourney")
+    GTable[E:id(), number] = E:id()
+    
+    GCTable = GTable:toTable()
+    
+    if(GCTable:values():max()  == E:id()){
+        WonTourney = 1
+    }
+    
+    timer("tourneycheck",1000)
+    
+    #init functions
+    
+    function clearLink() {
+    
+        E:deleteWire("DoNotWireIn")
+        
+        local R = ioOutputEntities("DoNotWireOut")
+        
+        for(N=1, R:count()){
+            R[N,entity]:deleteWire("DoNotWireIn")
+            
+            if(R[N,entity]:type() == "gmod_wire_plug"){
+                R[N,entity]:deleteWire("In")
+            }
+        }
+        
+    }
+    
+}
+
+
+#plug logic, sadly its the most simple part of the chip
+if(~DoNotWireIn){
+    Out = DoNotWireIn
+}
+
+if(~In){
+    DoNotWireOut = In
+}
+
+#holo and Wired output logic
+if(->DoNotWireIn){
+    Wired = 1
+    holoPos(1,E:toWorld(vec(0,0,-1)))
+    holoAng(1,E:toWorld(ang(-20,0,0)))  
+}
+if(!->DoNotWireIn){
+    Wired = 0
+    holoPos(1,E:toWorld(vec(0,0,0)))
+    holoAng(1,E:toWorld(ang(0,0,0)))  
+}
+
+#link part
+if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
+    
+    interval(70)
+    signalSetGroup("mmuplug")
+    runOnSignal("compatlink",0,1)
+    
+    #simplifer variables
+    if(changed(O:keyPressed("E")) & O:keyPressed("E")){PressedE = 1}else{PressedE = 0}
+    
+    if(changed(O:keyPressed("R")) & O:keyPressed("R")){PressedR = 1}else{PressedR = 0}
+    
+    if(EorRUnlink & Wired){ReadyEUnlink = 1}else{ReadyEUnlink=0}
+    
+    EH = owner():eyeTrace():entity()
+    
+    #being linked check
+    if(changed(Wired) & Wired){
+        BeingLinked = 1
+        timer("resettimer", 100)
+    }
+    
+    #reset link
+    if(clk("resettimer")){
+        BeingLinked = 0
+    }
+    
+    #Cancelling, up here to prevent a link start with E unlinking
+    if(((PressedR & !ReadyEUnlink) | (ReadyEUnlink & PressedE)) & EH == E & LinkStage == 0){
+        hint("Plugs unlinked.", 5)
+        O:soundPlay(3,0,"buttons/lever8.wav")
+        E:constraintBreak("rope")
+        clearLink()
+        
+        Unlinking = 1
+        timer("unlinkreset",300)
+    }
+    
+    if(clk("unlinkreset")){
+        Unlinking = 0
+    }
+    
+    if(PressedR & LinkStage>0){
+        LinkStage = 0
+        hint("Plug link cancelled.",5)
+        O:soundPlay(4,0,"buttons/lever8.wav")
+    }
+    
+    
+    
+    
+    #start link process
+    
+    if(PressedE & EH == E & LinkStage == 0){
+        timer("linkcheck", 70)
+    }
+    
+    if(clk("linkcheck") & !BeingLinked & !Unlinking){
+        LinkStage = 1
+        hint("Select another MU plug with key E to link them together.", 5)
+        O:soundPlay(1,0,"buttons/button16.wav")
+    }
+    
+    
+    #confirm plug through output
+    if(PressedE & EH != E & EH:type() == "gmod_wire_expression2" & LinkStage == 1 & !ReadyEUnlink){
+        E:createWire(EH,"DoNotWireIn","VerifyR")
+    }
+    
+    #if data is confirmed, which means chips are compatible, link MU plugs
+    if(DoNotWireIn[1,string] == "mmuplug"){
+        
+        stoptimer("badcheck")
+        
+        local Plug = DoNotWireIn[3,entity]
+        local PlugRopePos = DoNotWireIn[2,vector]
+        
+        hint("Auth successful, MU plugs linked!",5)
+        
+        O:soundPlay(2,0,"buttons/button19.wav")
+        
+        clearLink()
+        E:constraintBreak("rope")
+        Plug:constraintBreak("rope")
+        
+        E:createWire(Plug,"DoNotWireIn","DoNotWireOut")
+        Plug:createWire(E,"DoNotWireIn","DoNotWireOut")
+        
+        LinkStage = 0
+    }
+
+
+
+
+    
+    #backwards compatibilty with plugs
+    
+    #shuts off all other e2s hints
+    if(signalClk("compatlink")){
+        PlugMsgCancel = 1
+        timer("compatlinkreset", 200)
+    }
+    
+    if(clk("compatlinkreset")){
+        PlugMsgCancel = 0
+    }
+    
+    #waits to see if hints are shutoff
+    if(PressedE & EH:type() == "gmod_wire_plug" & LinkStage == 0 & WonTourney){
+        timer("compatlinkcheck",100)
+    }
+    
+    if(clk("compatlinkcheck") & !PlugMsgCancel){
+        hint("Start from the E2 MU plug, not from the Wire Plug.", 5)
+        O:soundPlay(6,0,"buttons/button7.wav")
+    }
+    
+    #actual linker and hint supressor
+    if(PressedE & EH:type() == "gmod_wire_plug" & LinkStage == 1){
+        
+        signalSend("compatlink",0)
+        
+        clearLink()
+        
+        hint("Old plug detected, MU plug linked!", 5)
+        O:soundPlay(2,0,"buttons/button19.wav")
+        
+        E:constraintBreak("rope")
+        EH:constraintBreak("rope")
+        
+        E:createWire(EH,"DoNotWireIn","Out")
+        EH:createWire(E,"In","DoNotWireOut")
+        
+        LinkStage = 0
+    }
+    
+    #removing links and cancelling
+    
+    if(PressedR & EH:type() == "gmod_wire_plug" & LinkStage == 0 & WonTourney){
+        hint("Can't unlink Wire plugs! Unlink it from the E2 MU plug.", 5)
+        O:soundPlay(6,0,"buttons/button7.wav")
+    }
+    
+}else{
+
+    interval(300)
+    
+    #switch away reset
+    if(LinkStage>0){
+        LinkStage = 0
+        hint("Plug link cancelled.",5)
+    }
+
+}
+
+#tournament so that only one e2 does hints on plugs
+if(clk("tourneycheck")){
+    
+    GCTable = GTable:toTable()
+    
+    if(GCTable:values():max()  == E:id()){
+        WonTourney = 1
+    }else{
+        WonTourney = 0
+    }
+    
+    timer("tourneycheck",1000)
+
+}
+
+#remove self from global table
+if(last()){
+    GTable:removeNumber(E:id():toString())
+}

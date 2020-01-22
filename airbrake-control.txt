@@ -1,14 +1,21 @@
 @name OpenControl/airbrake-control
-@inputs Locomotive:entity BrakePipeAnglecock [AirMU_FrontIN AirMU_RearIN CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_CIRCUIT_DATA ENGINE_SOUND_DATA]:array
-@outputs [AirMU_FrontOUT AirMU_RearOUT LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Compressor AirSpit
+@inputs Locomotive:entity BPAngleCockFRONT BPAngleCockREAR [AirMU_FrontIN AirMU_RearIN CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_CIRCUIT_DATA ENGINE_SOUND_DATA]:array
+@outputs [AirMU_FrontOUT AirMU_RearOUT LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Compressor AirSpit AirMU
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeLocalVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local IndNotch BrakePipeLocalCutin TrainLine
 @persist SmoothTable:table TotalBPVol BrakePipeLocalVol TrainlineEQ TLBP_Equal ERBP_Equal ERBP_EqualLOCKED BrakePipeLocal BrakePipe CompRefill CarCount BrakeLinePumpLoss MRCO EQCO TLCO TLDropToZero AirMU
-@persist COMPEngineOn BrakePipeLocalAnglecock AirSpit
+@persist COMPEngineOn BrakePipeLocalAnglecock AirSpit IsLead BrakePipeAnglecock
 @trigger none
 @model
 
 CarCount = LOCOMOTIVE_CIRCUIT_DATA[1,number]
+
+if(BPAngleCockFRONT | BPAngleCockREAR){
+    BrakePipeAnglecock = 1    
+}
+else{
+    BrakePipeAnglecock = 0    
+}
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -76,31 +83,41 @@ if((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 0){
     COMPEngineOn = 0    
 }
 
+IsLead = CONTROL_STAND_DATA[28,number]
 
-if(->AirMU_FrontIN | ->AirMU_RearIN){
-    IndependantMU = AirMU_FrontIN[1,number]
-    PressureSetMU = AirMU_FrontIN[2,number]
-    MainResMU = AirMU_FrontIN[3,number]
-    AirMU = 1
+if(IsLead == 0){
+    if(->AirMU_FrontIN | ->AirMU_RearIN){
+        if(->AirMU_FrontIN){
+            IndependantMU = AirMU_FrontIN[1,number]
+            PressureSetMU = AirMU_FrontIN[2,number]
+            MainResMU = AirMU_FrontIN[3,number]
+        }
+        elseif(->AirMU_RearIN){
+            IndependantMU = AirMU_RearIN[1,number]
+            PressureSetMU = AirMU_RearIN[2,number]
+            MainResMU = AirMU_RearIN[3,number]
+        }
+        AirMU = 1
+    }    
 }
-elseif(!->AirMU_FrontIN & !->AirMU_RearIN){
+elseif(IsLead == 1){
     IndependantMU = BrakeCylinder
     PressureSetMU = CONTROL_STAND_DATA[3,number]
     MainResMU = MainReservoir
     AirMU = 0
 }
 
-if(AirMU == 0){
+if(IsLead == 1){
     AirMU_FrontOUT = array(IndependantMU,PressureSetMU,MainResMU)
     AirMU_RearOUT = array(IndependantMU,PressureSetMU,MainResMU)
 }
 
-if(AirMU){
+if(AirMU == 1){
     MainReservoir = MainResMU
     BrakeCylinder = IndependantMU
     AutoPressureSet = PressureSetMU
 }
-else{
+elseif(AirMU == 0){
     AutoPressureSet = CONTROL_STAND_DATA[4,number]
 }
 
@@ -155,7 +172,7 @@ else{
     Compressor = 0
 }
 
-if(!AirMU){
+if(AirMU == 0){
     if(Discharging_EQ){
         if(changed(EqualizingReservoir)){
             if(BrakeCylinder<65){
@@ -231,7 +248,7 @@ if(changed(MainCharged) & MainCharged){
 }
 ]#
 #if(MainCharged & TopUpMainRes){   
-if(CONTROL_STAND_DATA[28,number] == 0){
+if(CONTROL_STAND_DATA[28,number] == 1){
     if(MainReservoir < 130){
         MRCO = 0
         Compressor = 1
@@ -732,7 +749,7 @@ elseif(changed(!COMPEngineOn)&!COMPEngineOn){
     Locomotive:soundPlay("aircompressor",0,CONFIGURATION_DATA[13,string])    
 }
 
-if(!AirMU){
+if(AirMU == 0){
     if(CONFIGURATION_DATA[23,number] == 0){
         if(CONTROL_STAND_DATA[8,number] & BrakeCylinder<65){
             BrakeCylinder += 2   

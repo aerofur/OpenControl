@@ -8,7 +8,7 @@
 @persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake HandleOff
 @persist Notch UnNotchThrottleF UnNotchThrottleB Reverser ReverserLocal HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock 
 @persist DynamicNotchLocal DynamicsSetupLocal DynamicsPowerZoneLocal DynamicUnlockLocal NotchLocal Isolation EngineRunLocal GenFieldLocal GroundRelayResetLocal DBWarning MUReverserFW MUReverserBW
-@persist MUCompressor IsLead SelectorNotch
+@persist MUCompressor IsLead SelectorNotch SelectorMove
 @trigger none 
 @model
 
@@ -340,9 +340,21 @@ if(HasSelctor == 1){
             SelectorNotch-=1
         }
     } 
-}
 
-ControlStand:setBodygroup(3,SelectorNotch)
+    if(changed(SelectorUp)&SelectorUp){
+        SelectorMove = 2
+    }
+    elseif(changed(SelectorDown)&SelectorDown){
+        SelectorMove = 0
+    }
+
+    if(SelectorMove != 1){
+        SelectorMove = 1
+    }
+
+    ControlStand:setBodygroup(3,SelectorNotch)
+    ControlStand:setBodygroup(8,SelectorMove)
+}
 
 if(HasSelctor == 0){
     if(DynamicNotchLocal == 0){

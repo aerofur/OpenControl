@@ -410,6 +410,7 @@ if(HasSelctor == 0){
             }
         }
     }
+}
 elseif(HasSelctor == 1){
     if(changed(IncreaseThrottle & !UnNotchThrottleF)&IncreaseThrottle & !UnNotchThrottleF){
         timer("throttlemoveF",400)    

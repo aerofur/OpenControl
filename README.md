@@ -9,7 +9,7 @@ The scope of the OpenControl Project is to build a robust, light-weight and life
 ## To-Do List
 This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#roadmap) for more info.
 
-  * [ ] Air Braking System
+  * [x] Air Braking System
     * [x] Compressor
     * [x] Compressor Logic
     * [x] Main Reservoir
@@ -18,22 +18,22 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
     * [x] Brake Cut-Out Logic
     * [x] Brake Pipe Pressure Loss /time (0.08 ppr1-ppr4)
     * [x] Main Reservoir Pressure Loss /time (0.25 ppr1-ppr4)
-    * [ ] Brake Pipe Logic
+    * [x] Brake Pipe Logic
     * [x] Equalization Function
-    * [ ] EOT Pressure Drop
+    * [x] EOT Pressure Drop
     * [x] Equalising Reservoir ~ Main Reservoir - Pump Logic
     * [x] Equalising Reservoir ~ Brake Pipe - Pump Logic
     * [x] Brake Type Settings (26L / 26C / 6SL / etc)
   * [ ] Traction System
     * [ ] Generator Transition
-    * [ ] Traction Motor Transition
+    * [x] Traction Motor Transition
     * [ ] AC & DC Motor/Gen Systems
     * [x] Traction Motor Logic
     * [x] Air Brake Force Application
   * [x] Physics System
   * [x] User Control
-  * [ ] I/O
-    * [ ] MU Hose Functionality
+  * [x] I/O
+    * [x] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2
     * [x] Handbrake
       * Make handbrake e2 that uses `eyeTrace()`, meaning you dont need to use buttons. (E to apply, Shift+E to release)

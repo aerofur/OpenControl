@@ -1,10 +1,10 @@
 @name OpenControl/airbrake-control
 @inputs Locomotive:entity BPAngleCockFRONT BPAngleCockREAR [AirMU_FrontIN AirMU_RearIN CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_CIRCUIT_DATA ENGINE_SOUND_DATA]:array
-@outputs [AirMU_FrontOUT AirMU_RearOUT LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Compressor AirSpit AirMU
+@outputs [AirMU_FrontOUT AirMU_RearOUT LOCOMOTIVE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Compressor AirSpit AirMU BP_Open BrakePipeAnglecock
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeLocalVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local IndNotch BrakePipeLocalCutin TrainLine
 @persist SmoothTable:table TotalBPVol BrakePipeLocalVol TrainlineEQ TLBP_Equal ERBP_Equal ERBP_EqualLOCKED BrakePipeLocal BrakePipe CompRefill CarCount BrakeLinePumpLoss MRCO EQCO TLCO TLDropToZero AirMU
-@persist COMPEngineOn BrakePipeLocalAnglecock AirSpit IsLead BrakePipeAnglecock
+@persist COMPEngineOn AirSpit IsLead BrakePipeAnglecock BP_Open NumRes
 @trigger none
 @model
 
@@ -13,7 +13,7 @@ CarCount = LOCOMOTIVE_CIRCUIT_DATA[1,number]
 if(BPAngleCockFRONT | BPAngleCockREAR){
     BrakePipeAnglecock = 1    
 }
-else{
+elseif((BPAngleCockFRONT & BPAngleCockREAR) == 0){
     BrakePipeAnglecock = 0    
 }
 
@@ -49,7 +49,7 @@ BrakePipeLocalCutin = 1
 TrainlineEQ = 1
 TLBP_Equal = 0
 Compressor = 0 
-TLDropToZero = 0
+BP_Open = 0
 
 timer("AutoAFM_Compare",500)
 timer("IndAFM_Compare",500)
@@ -73,7 +73,7 @@ interval(150)
 if(changed((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 1)&(ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 1){
     timer("engst_comp",10000)    
 }
-
+#[
 if(clk("engst_comp")){
     COMPEngineOn = 1    
     stoptimer("engst_comp")
@@ -82,6 +82,9 @@ if(clk("engst_comp")){
 if((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 0){
     COMPEngineOn = 0    
 }
+]#
+
+COMPEngineOn = 1
 
 IsLead = CONTROL_STAND_DATA[28,number]
 
@@ -123,198 +126,157 @@ elseif(AirMU == 0){
 
 if(COMPEngineOn){
     if(Compressor){   
-        #if(CONTROL_STAND_DATA[28,number] == 0){
-            #local RoundedMR = round(MainReservoir)
-            #MainReservoir = RoundedMR
-            if(!PauseCOMP_EQing){
-                if(round(MainReservoir)<140){
-                    MainReservoir += (CompressorTime*EqualizedHalfandHalf*CompRefill)
-                }
-                elseif(MainReservoir>140){
-                    MainReservoir = 140      
-                }
-                #[
-                if(BrakePipeLocalAnglecock){
-                    if(TLBP_Equal){
-                        BrakeLinePumpLoss = 1    
-                    }
-                }
-                else{
-                    BrakeLinePumpLoss = 0    
-                }
-                
-                if(BrakeLinePumpLoss){
-                    if(round(EqualizingReservoir) == 90){
-                        BrakeLinePumpLoss = 0    
-                    }
-                }
-                ]#
-                if(CONTROL_STAND_DATA[7,number] == 1){
-                    if(!Discharging_EQ){
-                        if(EqualizingReservoir<AutoPressureSet){
-                            EqualizedHalfandHalf = 0.25 #/ (BrakeLinePumpLoss ? (1+((TotalBPVol/35)-(BrakePipeLocalVol/35))) : 1)
-                            EqualizingReservoir += (CompressorTime*EqualizedHalfandHalf)
-                        }
-                        elseif(EqualizingReservoir>AutoPressureSet){
-                            EqualizingReservoir = AutoPressureSet  
-                        }
-                        
-                        if(inrange(EqualizingReservoir,(AutoPressureSet-1),AutoPressureSet)){
-                            EqualizedHalfandHalf = 1 #/ (BrakeLinePumpLoss ? (1+((TotalBPVol/35)-(BrakePipeLocalVol/35))) : 1)
-                        }
-                    }
-                }
+        if(MainReservoir<140){
+            MainReservoir += (CompressorTime/NumRes)
+        }
+        elseif(MainReservoir > 140){
+            MainReservoir = 140    
+        }
+        
+        NumRes = 1.89
+        
+        if(round(EqualizingReservoir)<90){
+            if(round(MainReservoir) > round(EqualizingReservoir)){
+                local SplitRate = (CompressorTime/NumRes)
+                EqualizingReservoir += SplitRate
+                MainReservoir -= SplitRate
             }
-        #}
-    }
-}
-else{
-    Compressor = 0
-}
-
-if(AirMU == 0){
-    if(Discharging_EQ){
-        if(changed(EqualizingReservoir)){
-            if(BrakeCylinder<65){
-                BrakeCylinder += 0.25
+            elseif(round(MainReservoir) < round(EqualizingReservoir)){
+                local SplitRate = (CompressorTime/NumRes)
+                EqualizingReservoir -= SplitRate
+                MainReservoir += SplitRate
+            }
+            elseif(round(MainReservoir) == round(EqualizingReservoir)){
+                local SplitRate = (CompressorTime/NumRes)
+                EqualizingReservoir = EqualizingReservoir
+                MainReservoir = MainReservoir
             }
         }
-    }
-    
-    if(changed(BrakeCylinder<0)&BrakeCylinder<0){
-        BrakeCylinder = 0    
-    }
-}
-
-#[
-if(CONTROL_STAND_DATA[7,number]>0){
-    if(!Discharging_EQ){
-        if(MainReservoir>60){
-            if(EqualizingReservoir<90){
-                if(round(EqualizingReservoir)!=round(MainReservoir) & !Equalized){
-                    Equalized = 0
-                    PauseCOMP_EQing = 1
-                    MainReservoir -= 0.15
-                    EqualizingReservoir += 1
-                }
-                
-                if(round(EqualizingReservoir)==round(MainReservoir)){
-                    Equalized = 1
-                    PauseCOMP_EQing = 0
-                }
-            }
-        }
-    }
-}
-]#
-
-if(TLDropToZero == 0){    
-    if(CONTROL_STAND_DATA[7,number]>0){
-        if(!Discharging_EQ){
-            if(MainReservoir>90){
-                if(EqualizingReservoir<90){
-                    if(round(EqualizingReservoir)!=round(MainReservoir)){
-                        PauseCOMP_EQing = 1
-                        if(TLDropToZero == 0){
-                            MainReservoir -= 0.1
-                        }
-                        EqualizingReservoir += 0.5
+        
+        if(CONTROL_STAND_DATA[7,number]>0){
+            if(BP_Open == 0){
+                if(BrakePipeLocal<90){
+                    if(round(EqualizingReservoir) > round(BrakePipeLocal)){
+                        local SplitRate = (CompressorTime/NumRes)
+                        BrakePipeLocal += SplitRate   
+                        EqualizingReservoir -= SplitRate
                     }
-                    
-                    if(round(EqualizingReservoir)==90){
-                        PauseCOMP_EQing = 0
+                    elseif(round(EqualizingReservoir) == round(BrakePipeLocal)){
+                        local SplitRate = (CompressorTime/NumRes)
+                        BrakePipeLocal == BrakePipeLocal   
+                        EqualizingReservoir == EqualizingReservoir
                     }
                 }
             }
         }
     }
 }
-#[
-if(MainReservoir<140 & MainCharged == 0){
-    Compressor = 1
-    MainCharging = 1
-}
-
-if(changed(MainCharging & inrange(MainReservoir,138,140))&MainCharging & inrange(MainReservoir,138,140)){
-    MainCharged = 1   
-}
-elseif(MainCharging & MainReservoir > 140){
-    MainReservoir = 140    
-    MainCharged = 1  
-}
-    
-if(changed(MainCharged) & MainCharged){    
-    TopUpMainRes = 1
-}
-]#
-#if(MainCharged & TopUpMainRes){   
-if(CONTROL_STAND_DATA[28,number] == 1){
-    if(MainReservoir < 130){
-        MRCO = 0
-        Compressor = 1
-        CompRefill = 1
-    }
-    elseif(MainReservoir > 130){
-        CompRefill = 0.45
-    }
-    
-    if(inrange(round(MainReservoir),138,140)){
-        MRCO = 1 
-    }
-    #[
-    if(round(EqualizingReservoir) != CONTROL_STAND_DATA[4,number]){
-        if(CONTROL_STAND_DATA[3,number] == 0){
-            if(TLBP_Equal == 1){
-                if(MainReservoir<140){
-                    Compressor = 1
-                    EQCO = 0
-                }
-            }
-        }
-    }
-    else{
-        EQCO = 1
-    }
-    ]#
-    EQCO = 1
-    
-    if(CONTROL_STAND_DATA[7,number] == 1){
-        if(TLBP_Equal){
-            if(round(TrainLine)!=round(EqualizingReservoir)){
-                Compressor = 1
-                TLCO = 0
-            }
-            elseif(round(TrainLine) == 90){
-                TLCO = 1    
-            }
-        }
-        else{
-            TLCO = 1    
-        }
-    }
-    else{
-        TLCO = 1    
-    }
-
-    if(MRCO & EQCO & TLCO){
-        Compressor = 0   
-    }
-}
-elseif(CONTROL_STAND_DATA[28,number] == 1){
-    Compressor = CONTROL_STAND_DATA[27,number]   
-}
-    
-#}
 
 #[
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
 DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control)
 ]#
 
+if(BrakePipeAnglecock == 1){
+    if(CarCount<2){
+        TrainLine = 0
+        BP_Open = 1
+        
+        if(BrakePipeLocal>0){
+            local FeedRate = 5
+            BrakePipeLocal -= FeedRate
+        }
+        elseif(BrakePipeLocal<0){
+            BrakePipeLocal = 0
+        }
+    }
+    elseif(CarCount>1){
+        BP_Open = 0
+        if(changed(CarCount)){
+            TrainLine = 0
+        }
+        
+        if(CONTROL_STAND_DATA[7,number]){
+            if(round(TrainLine) < round(BrakePipeLocal)){
+                local FeedRate = (CompressorTime/NumRes)
+                TrainLine += FeedRate
+                BrakePipeLocal -= FeedRate
+            }
+            elseif(round(TrainLine) > round(BrakePipeLocal)){
+                local FeedRate = (CompressorTime/NumRes)
+                TrainLine -= FeedRate
+                BrakePipeLocal += FeedRate
+            }
+            elseif(round(TrainLine) == round(BrakePipeLocal)){
+                TrainLine = BrakePipeLocal
+            }
+        }
+        else{
+            TrainLine = BrakePipeLocal
+        }
+    }
+}
+elseif(BrakePipeAnglecock == 0){
+    TrainLine = BrakePipeLocal    
+    BP_Open = 0
+}
 
-#if(changed(MainCharged & TopUpMainRes)&MainCharged & TopUpMainRes){
-#    timer("airspitloss",1000)    
-#}
+if(BrakePipeAnglecock == 0){   
+    BP_Open = 0
+}
+
+local AutomaticPressureSet = CONTROL_STAND_DATA[4,number]
+
+if(CONTROL_STAND_DATA[7,number]>0){
+    if(BP_Open == 0){
+        if(round(BrakePipeLocal) != AutomaticPressureSet){
+            if(round(BrakePipeLocal) < AutomaticPressureSet){
+                local FeedRate = (CompressorTime/NumRes)
+                BrakePipeLocal += FeedRate
+                MainReservoir -= FeedRate/6
+            }
+            elseif(round(BrakePipeLocal) > AutomaticPressureSet){
+                local FeedRate = (CompressorTime/NumRes)
+                BrakePipeLocal -= FeedRate
+            }
+            elseif(round(BrakePipeLocal) == AutomaticPressureSet){
+                BrakePipeLocal = AutomaticPressureSet
+            }
+        }
+    
+        if(EqualizingReservoir != BrakePipeLocal){
+            if(round(EqualizingReservoir) < round(BrakePipeLocal)){
+                local SplitRate = (CompressorTime/NumRes)
+                EqualizingReservoir += SplitRate
+                BrakePipeLocal -= SplitRate
+            }
+            elseif(round(EqualizingReservoir) > round(BrakePipeLocal)){
+                local SplitRate = (CompressorTime/NumRes)
+                EqualizingReservoir -= SplitRate
+                BrakePipeLocal += SplitRate
+            }
+            elseif(round(EqualizingReservoir) == round(BrakePipeLocal)){
+                EqualizingReservoir = EqualizingReservoir
+                BrakePipeLocal = BrakePipeLocal
+            }
+        }
+    }
+}
+
+if(round(MainReservoir)<140 & !MainCharged){
+    Compressor = 1    
+}
+elseif(round(MainReservoir) == 140 & !MainCharged){
+    MainCharged = 1    
+}
+
+if(round(MainReservoir)<130 & MainCharged){
+    Compressor = 1    
+}
+
+if(round(MainReservoir) == 140){
+    Compressor = 0    
+}
 
 if(changed(clk("airspitloss"))&clk("airspitloss")){
     if(!Compressor){
@@ -331,53 +293,6 @@ if(changed(clk("airspitloss"))&clk("airspitloss")){
 
 if(AirSpit == 1){
     AirSpit = 0    
-}
-
-
-if(changed(round(EqualizingReservoir,0)==round(MainReservoir,0))&round(EqualizingReservoir,0)==round(MainReservoir,0)){
-    Equalized = 1
-}
-elseif(changed(round(EqualizingReservoir,0)!=round(MainReservoir,0))&round(EqualizingReservoir,0)!=round(MainReservoir,0)){
-    Equalized = 0
-}
-
-if(TLDropToZero == 0){    
-    if(CONTROL_STAND_DATA[7,number]>0){
-        if(CONTROL_STAND_DATA[3,number]>0){
-            if(EqualizingReservoir>AutoPressureSet){
-                Discharging_EQ = 1
-                
-                if(round(EqualizingReservoir)!=AutoPressureSet){
-                    if(EqualizingReservoir>AutoPressureSet){
-                        EqualizingReservoir -= (CONTROL_STAND_DATA[5,number] ? 4 : 0.45)
-                    }
-                }
-            
-                if(round(EqualizingReservoir) == AutoPressureSet & CONTROL_STAND_DATA[3,number]>0){
-                    EqualizingReservoir = EqualizingReservoir
-                }
-            }
-            if(EqualizingReservoir<AutoPressureSet){
-                Discharging_EQ = 1
-                
-                if(round(EqualizingReservoir)!=AutoPressureSet){
-                    if(EqualizingReservoir<AutoPressureSet){
-                        EqualizingReservoir += (CONTROL_STAND_DATA[5,number] ? 4 : 0.45)
-                        if(TLDropToZero == 0){
-                            MainReservoir -= (0.1)
-                        }
-                    }
-                }
-            
-                if(round(EqualizingReservoir) == AutoPressureSet & CONTROL_STAND_DATA[3,number]>0){
-                    EqualizingReservoir = EqualizingReservoir
-                }
-            }
-        }
-        elseif(CONTROL_STAND_DATA[3,number]<1){
-            Discharging_EQ = 0   
-        }
-    }
 }
 
 if(AutoAFM == 0){
@@ -403,332 +318,6 @@ if(clk("IndAFM_Compare")){
     IndependentAFM_Local = abs((IndAFMCapture2 - IndAFMCapture))
     IndAFM = 0
 }
-
-#[
-#if(BrakePipeLocalAnglecock){
-    if((round(EqualizingReservoir) != round(BrakePipeLocal)) | (round(BrakePipeLocal) != round(TrainLine))){
-        if(!TLBP_Equal){
-            if(BrakePipeLocalAnglecock){
-                if(CarCount>0){
-                    if(round(BrakePipeLocal)>0){
-                        BrakePipeLocalCutin = 0
-                        TrainLine = 0
-                        TrainlineEQ = 0
-                    }
-                    elseif(round(BrakePipeLocal) == 0){
-                        BrakePipeLocalCutin = 1    
-                    }
-                }
-                
-                if(!BrakePipeLocalCutin){
-                    if(round(BrakePipeLocal)>round(TrainLine)){
-                        TrainlineEQ = 0
-                        #TotalBPVol = BrakePipeLocalVol*max(CarCount,1)
-                        #BrakePipeLocal = round(BrakePipeLocal)
-                        if(BrakePipeLocal>0){
-                            BrakePipeLocal -= 1
-                        }
-                        #if(TrainLine<90){
-                            TrainLineICR = 1
-                        #}
-                        PauseCOMP_EQing = 1
-                    }
-                    elseif(round(BrakePipeLocal)<round(TrainLine)){
-                        TrainlineEQ = 0
-                        #TotalBPVol = BrakePipeLocalVol*max(CarCount,1)
-                        #BrakePipeLocal = round(BrakePipeLocal)
-                        if(BrakePipeLocal<90){
-                            BrakePipeLocal += 1
-                        }
-                            TrainLineDCR = 1
-                        PauseCOMP_EQing = 1
-                    }
-                    elseif(round(BrakePipeLocal) == round(TrainLine)){
-                        TrainlineEQ = 1
-                        TrainLineEqual = 1
-                        PauseCOMP_EQing = 0
-                        #BrakePipeLocalCutin = 1
-                    }
-                }
-            }
-            elseif(!BrakePipeLocalAnglecock){
-                BrakePipeLocalCutin = 1    
-                TrainLine = 0
-                TrainlineEQ = 1
-                PauseCOMP_EQing = 0
-            }
-        }
-        
-        #if(!ERBP_Equal){
-            if(round(BrakePipeLocal) == round(TrainLine)){
-                TrainLine = BrakePipeLocal
-                PauseCOMP_EQing = 0
-                TLBP_Equal = 1
-            }
-        #}
-    }
-
-    if(TrainLineICR){
-        TrainLine+=1    
-    }    
-    elseif(TrainLineDCR & TrainLine>0){
-        TrainLine-=1    
-    }
-    elseif(TrainLineEqual){
-        TrainLine = TrainLine
-    }
-    
-    if(round(BrakePipeLocal) == round(TrainLine)){
-        TrainLine = BrakePipeLocal
-        PauseCOMP_EQing = 0
-        TLBP_Equal = 1
-    }
-    
-    #if(!ERBP_EqualLOCKED){
-        if(!Discharging_EQ){
-            if(round(BrakePipeLocal)<90){
-                if(round(EqualizingReservoir)>0){
-                    if(round(EqualizingReservoir)!=round(BrakePipeLocal)){
-                        PauseCOMP_EQing = 1
-                        EqualizingReservoir -= 1
-                        BrakePipeLocal += 1
-                    }
-                    
-                    if(round(EqualizingReservoir)==round(BrakePipeLocal)){
-                        PauseCOMP_EQing = 0
-                        ERBP_Equal = 1
-                    }
-                }
-            }
-        }
-    #}
-    
-    if(round((inrange(EqualizingReservoir,(EqualizingReservoir-1),(EqualizingReservoir+1))),0) == round((inrange(BrakePipeLocal,(BrakePipeLocal-1),(BrakePipeLocal+1))),0)){    
-        
-        if(Compressor){
-            if(!Discharging_EQ){
-                if(EqualizingReservoir<90){
-                    EqualizedHalfandHalf = 1
-                    EqualizingReservoir += (CompressorTime*EqualizedHalfandHalf)
-                }
-                
-                if(EqualizingReservoir>89 & EqualizingReservoir<90){
-                    EqualizedHalfandHalf = 1
-                }
-            }
-        }
-        
-        
-        if(CONTROL_STAND_DATA[7,number]>0){
-            #if(changed(EqualizingReservoir)&EqualizingReservoir){
-                BrakePipeLocal = EqualizingReservoir
-                #ERBP_EqualLOCKED = 1
-            #}
-        }
-    }
-#}
-if(!BrakePipeLocalAnglecock){
-    if(CONTROL_STAND_DATA[7,number]>0){
-        #if(changed(EqualizingReservoir)&EqualizingReservoir){
-            BrakePipeLocal = EqualizingReservoir
-            #ERBP_EqualLOCKED = 1
-        #}
-    }    
-}
-elseif(!BrakePipeLocalAnglecock){
-    BrakePipeLocalCutin = 1    
-    TrainLine = 0
-    TrainlineEQ = 1
-    PauseCOMP_EQing = 0
-}
-
-if(CarCount>0){
-    if(inrange(round(EqualizingReservoir),89,90)){
-        TrainLine = 90
-    }
-}
-else{
-    TrainLine = 0
-}
-]#
-
-#} #END OF ENGINE ON BLOCK
-
-if(CONTROL_STAND_DATA[26,number] == 0){
-    if(COMPEngineOn){
-        if(BrakePipeLocalAnglecock){
-            if((round(EqualizingReservoir) != round(BrakePipeLocal)) | (round(BrakePipeLocal) != round(TrainLine))){
-                TLBP_Equal = 0
-                #TrainLine = 0
-                if(!TLBP_Equal){
-                    if(BrakePipeLocalAnglecock){
-                        if(CarCount>0){
-                            if(round(BrakePipeLocal)>0){
-                                BrakePipeLocalCutin = 0
-                                TrainlineEQ = 0
-                            }
-                            elseif(round(BrakePipeLocal) == 0){
-                                BrakePipeLocalCutin = 1    
-                            }
-                        }
-                        elseif(CarCount<1){
-                            BrakePipeLocalCutin = 1    
-                            TrainLine = 0
-                            TrainlineEQ = 1
-                        }
-                        
-                        if(!BrakePipeLocalCutin){
-                            if(round(BrakePipeLocal)>round(TrainLine)){
-                                TrainlineEQ = 0
-                                #TotalBPVol = BrakePipeLocalVol*max(CarCount,1)
-                                #BrakePipeLocal = round(BrakePipeLocal)
-                                BrakePipeLocal -= 1
-                                TrainLine += 1
-                                PauseCOMP_EQing = 1
-                            }
-                            elseif(round(BrakePipeLocal)<round(TrainLine)){
-                                TrainlineEQ = 0
-                                #TotalBPVol = BrakePipeLocalVol*max(CarCount,1)
-                                #BrakePipeLocal = round(BrakePipeLocal)
-                                BrakePipeLocal += 1
-                                TrainLine -= 1
-                                PauseCOMP_EQing = 1
-                            }
-                            elseif(round(BrakePipeLocal) == round(TrainLine)){
-                                BrakePipeLocalCutin = 1
-                                TrainlineEQ = 1
-                                TrainLine = BrakePipeLocal
-                                PauseCOMP_EQing = 0
-                            }
-                        }
-                    }
-                    elseif(!BrakePipeLocalAnglecock){
-                        BrakePipeLocalCutin = 1    
-                        TrainLine = 0
-                        TrainlineEQ = 1
-                        PauseCOMP_EQing = 0
-                    }
-                }
-                
-                #if(!ERBP_Equal){
-                    if(round(BrakePipeLocal) == round(TrainLine)){
-                        TrainLine = BrakePipeLocal
-                        PauseCOMP_EQing = 0
-                        TLBP_Equal = 1
-                    }
-                #}
-            }
-            
-            #if(!ERBP_EqualLOCKED){
-                if(!Discharging_EQ){
-                    if(round(BrakePipeLocal)<90){
-                        if(round(EqualizingReservoir)>20){
-                            if(round(EqualizingReservoir)!=round(BrakePipeLocal)){
-                                PauseCOMP_EQing = 1
-                                EqualizingReservoir -= 1
-                            }
-                            
-                            if(round(EqualizingReservoir)==round(BrakePipeLocal)){
-                                PauseCOMP_EQing = 0
-                                ERBP_Equal = 1
-                            }
-                        }
-                    }
-                }
-            #}
-            
-            if(round((inrange(EqualizingReservoir,(EqualizingReservoir-1),(EqualizingReservoir+1))),0) == round((inrange(BrakePipeLocal,(BrakePipeLocal-1),(BrakePipeLocal+1))),0)){    
-                
-                if(Compressor){
-                    if(!Discharging_EQ){
-                        if(EqualizingReservoir<90){
-                            EqualizedHalfandHalf = 1
-                            EqualizingReservoir += (CompressorTime*EqualizedHalfandHalf)
-                        }
-                        
-                        if(EqualizingReservoir>89 & EqualizingReservoir<90){
-                            EqualizedHalfandHalf = 1
-                        }
-                    }
-                }
-                
-                
-                if(CONTROL_STAND_DATA[7,number]>0){
-                    #if(changed(EqualizingReservoir)&EqualizingReservoir){
-                        BrakePipeLocal = EqualizingReservoir
-                        #ERBP_EqualLOCKED = 1
-                    #}
-                }
-            }
-        }
-        elseif(!BrakePipeLocalAnglecock){
-            if(CONTROL_STAND_DATA[7,number]>0){
-                #if(changed(EqualizingReservoir)&EqualizingReservoir){
-                    BrakePipeLocal = EqualizingReservoir
-                    TLBP_Equal = 1
-                    #ERBP_EqualLOCKED = 1
-                #}
-            }    
-        }
-    
-        if(BrakePipeLocalAnglecock){
-            if(inrange(((round(BrakePipeLocal))-(round(TrainLine))),-5,5)){
-                PauseCOMP_EQing = 0
-                TLBP_Equal = 1
-            }
-        }
-        else{
-            TLBP_Equal = 1    
-        }
-        
-        if(TLBP_Equal){
-            TrainLine = BrakePipeLocal    
-        }
-        
-        if(!BrakePipeAnglecock){
-            if(CarCount>1){
-                BrakePipeLocalAnglecock = 1        
-            }
-            else{
-                BrakePipeLocalAnglecock = BrakePipeAnglecock 
-            }
-        }
-        else{
-            BrakePipeLocalAnglecock = BrakePipeAnglecock
-        }
-    }
-}
-
-#[
-if(CarCount<2 | !BrakePipeLocalAnglecock){
-    BrakePipeLocalCutin = 1    
-    TrainLine = 0
-    TrainlineEQ = 1    
-    TLBP_Equal = 0
-}
-
-if(CarCount<2 & BrakePipeLocalAnglecock){    
-    if(TrainLine>0){
-        TrainLine = -1
-    }
-    if(BrakePipeLocal>0){
-        BrakePipeLocal = -1
-    }
-    PauseCOMP_EQing = 1
-    TrainlineEQ = 1    
-    TLBP_Equal = 0
-    TLDropToZero = 1
-}
-elseif(CarCount>1 | !BrakePipeLocalAnglecock){
-    BrakePipeLocalCutin = 1    
-    TrainLine = 0
-    TrainlineEQ = 1    
-    TLBP_Equal = 0    
-    TLDropToZero = 0
-}
-]#
-
-TLDropToZero = 0
 
 TotalBPVol = BrakePipeLocalVol*max(CarCount,1)
 BrakePipe = smooth((BrakePipeLocal),(15)+(CarCount*1),"brakepipe-smoothing",0)
@@ -786,6 +375,6 @@ if(AirMU == 0){
 
 
 
-LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch,BrakePipeLocalAnglecock,BrakePipeLocal,Compressor,BrakePipeAnglecock)
+LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch,BrakePipeAnglecock,BrakePipeLocal,Compressor,BrakePipeAnglecock)
 
 

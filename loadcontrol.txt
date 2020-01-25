@@ -323,7 +323,7 @@ elseif(HasSelector == 1){
         if(CONTROL_STAND_DATA[21,number] == 1){
             if(CONTROL_STAND_DATA[24,number] == 1){
                 if(CONTROL_STAND_DATA[16,number] != 0){
-                    if(CONTROL_STAND_DATA[29,number] == inrange(CONTROL_STAND_DATA[29,number],1,4)){
+                    if(CONTROL_STAND_DATA[29,number] > 0){
                         if(CONTROL_STAND_DATA[18,number]>0){
                             local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
                             CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
@@ -362,6 +362,7 @@ elseif(HasSelector == 1){
                     elseif(CONTROL_STAND_DATA[29,number] == 0){
                         CurrentBO = 0
                         Current = 0 
+                        TE = 0
                     }
                 }
                 else{
@@ -406,7 +407,7 @@ elseif(CurrentBO<-MaxDynamicCurrent){
 if(CONTROL_STAND_DATA[16,number] != 0){
     if(CONTROL_STAND_DATA[12,number]>0){
         if(!DynamicShort){
-            if(Current>MaxContinuousDynamicCurrent){
+            if(Current<(-MaxContinuousDynamicCurrent)){
                 DynamicTemp += (Current/100)
                 DynamicBrakeWarning = 1
             }
@@ -519,7 +520,7 @@ if(LOCOMOTIVE_DATA[4,number]<10){
     BE = 0
 }
 elseif(LOCOMOTIVE_DATA[4,number]>10){
-    BEVLB = 80000*(abs((LOCOMOTIVE_DATA[4,number]))/65)
+    BEVLB = 50000*(abs((LOCOMOTIVE_DATA[4,number]))/65)
     BE = (LOCOMOTIVE_DATA[4,number]*(Holding ? 0 : BEVLB*(ClaspBrakes ? 1.25 : 1)))
 }
 
@@ -535,10 +536,10 @@ if(CONTROL_STAND_DATA[7,number] == 1){
     if(CONTROL_STAND_DATA[26,number] == 0){
         if(round(LOCOMOTIVE_DATA[3,number])<89){
             if(MaxTrainBrakeForce == 0){
-                BEAuto = (round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 150000)
+                BEAuto = ((round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 150000))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
             }
             elseif(MaxTrainBrakeForce>0){
-                BEAuto = MaxTrainBrakeForce*(round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 40)
+                BEAuto = (MaxTrainBrakeForce*(round(LOCOMOTIVE_DATA[3,number])-90)*(AutoMux ? 0 : 40))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
             }
         }
         elseif(round(LOCOMOTIVE_DATA[3,number])>89){
@@ -634,7 +635,7 @@ elseif(MPH < BaseSpeed){
     elseif(CONTROL_STAND_DATA[12,number]<2){
         DynoHPINCR = 1
     }
-    TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(1*DynoHPINCR)
+    TE = (TE_Effective*(BaseSpeed/TopSpeed)*Motors*MaxGeneratorCurrent/8)*(0.85*DynoHPINCR)
 }
 
 if(BHQ){

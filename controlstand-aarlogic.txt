@@ -330,12 +330,12 @@ elseif(!InsertReverser & ReverserLocal == 0){
 local HasSelctor = CONFIGURATION_DATA[2,number]
 
 if(HasSelctor == 1){
-    if(SelectorUp){
+    if(changed(SelectorUp)&SelectorUp){
         if(SelectorNotch<5){
             SelectorNotch+=1
         }
     } 
-    elseif(SelectorDown){
+    elseif(changed(SelectorDown)&SelectorDown){
         if(SelectorNotch>0){
             SelectorNotch-=1
         }
@@ -347,13 +347,16 @@ if(HasSelctor == 1){
     elseif(changed(SelectorDown)&SelectorDown){
         SelectorMove = 0
     }
+    elseif(changed(!SelectorDown & !SelectorUp)&!SelectorDown & !SelectorUp){
+        SelectorMove = 1
+    }
 
     if(SelectorMove != 1){
         SelectorMove = 1
     }
 
     ControlStand:setBodygroup(3,SelectorNotch)
-    ControlStand:setBodygroup(8,SelectorMove)
+    ControlStand:setBodygroup(9,SelectorMove)
 }
 
 if(HasSelctor == 0){
@@ -520,6 +523,11 @@ elseif(HasSelctor == 1){
         if(DynamicsPowerZoneLocal == 0){
             DynamicUnlockLocal = 0   
         }  
+    }
+    elseif(SelectorNotch<5){
+        DynamicUnlockLocal = 0
+        DynamicsPowerZoneLocal = 0
+        DynamicNotchLocal = 0
     }
 }
 

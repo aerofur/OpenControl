@@ -111,6 +111,12 @@ We are very grateful for your help with the Project, whether a one time contribu
 
 [![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/0)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/0)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/1)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/1)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/2)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/2)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/3)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/3)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/4)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/4)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/5)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/5)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/6)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/6)[![](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/images/7)](https://sourcerer.io/fame/TitusStudiosMediaGroup/TitusStudiosMediaGroup/OpenControl/links/7)
 
+## Addressing the Elephant in the Room
+
+The OpenControl project is in no way associated with RLC, PT Gamma, PT2, or other variants. OpenControl is solely based on community contributions. OpenControl is neither a re-built, edited, or rebranded version of RLC, nor is this project based on events, which is basing this entire project over "revenge" for said events
+
+OpenControl is in no way associated with RLC, PT Gamma, PT2, or other variants. And is neither a re-built, edited, or rebranded version of RLC.
+
 ## Licence
 
 OpenControl is licensed under the: **MIT License**

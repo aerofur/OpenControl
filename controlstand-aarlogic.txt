@@ -327,9 +327,9 @@ elseif(!InsertReverser & ReverserLocal == 0){
 }
 
 
-local HasSelctor = CONFIGURATION_DATA[2,number]
+local HasSelector = CONFIGURATION_DATA[2,number]
 
-if(HasSelctor == 1){
+if(HasSelector == 1){
     if(changed(SelectorUp)&SelectorUp){
         if(SelectorNotch<5){
             SelectorNotch+=1
@@ -359,7 +359,7 @@ if(HasSelctor == 1){
     ControlStand:setBodygroup(9,SelectorMove)
 }
 
-if(HasSelctor == 0){
+if(HasSelector == 0){
     if(DynamicNotchLocal == 0){
         if(changed(IncreaseThrottle & !UnNotchThrottleF)&IncreaseThrottle & !UnNotchThrottleF){
             timer("throttlemoveF",400)    
@@ -414,7 +414,7 @@ if(HasSelctor == 0){
         }
     }
 }
-elseif(HasSelctor == 1){
+elseif(HasSelector == 1){
     if(changed(IncreaseThrottle & !UnNotchThrottleF)&IncreaseThrottle & !UnNotchThrottleF){
         timer("throttlemoveF",400)    
     }
@@ -468,7 +468,7 @@ elseif(HasSelctor == 1){
     }
 }
 
-if(HasSelctor == 0){
+if(HasSelector == 0){
     if(ReverserLocal!=0){
         if(NotchLocal == 0){
             if(changed(IncreaseDynamics)&IncreaseDynamics){
@@ -507,7 +507,7 @@ if(HasSelctor == 0){
         }   
     }
 }
-elseif(HasSelctor == 1){
+elseif(HasSelector == 1){
     if(SelectorNotch == 5){
         DynamicUnlockLocal = 0
         DynamicsPowerZoneLocal = (NotchLocal*10)
@@ -531,11 +531,11 @@ elseif(HasSelctor == 1){
     }
 }
 
-if(HasSelctor == 0){
+if(HasSelector == 0){
     ControlStand:setBodygroup(2,NotchLocal)
     ControlStand:setBodygroup(3,3+DynamicNotchLocal+((DynamicsPowerZoneLocal/10)-3))    
 }
-elseif(HasSelctor == 1){
+elseif(HasSelector == 1){
     ControlStand:setBodygroup(2,NotchLocal)  
 }
 
@@ -858,7 +858,7 @@ CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,Thr
 CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
 AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBellStart,
 MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM,
-EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd)
+EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd,TransitionFS,TransitionNS,TransitionRS)
 ]#
 
 if(!ReverserRemoved){
@@ -866,11 +866,33 @@ if(!ReverserRemoved){
         ControlStand:soundPlay("rev",0,CONFIGURATION_DATA[3,string])   
     }
     elseif(changed(ReverserLocal == 0)&ReverserLocal == 0){
-        ControlStand:soundPlay("rev",0,CONFIGURATION_DATA[4,string])      
+        ControlStand:soundPlay("revn",0,CONFIGURATION_DATA[4,string])      
     }
     elseif(changed(ReverserLocal == -1)&ReverserLocal == -1){
         ControlStand:soundPlay("rev",0,CONFIGURATION_DATA[5,string])  
     }
+}
+
+if(HasSelector == 1){
+    if(changed(SelectorUp == 1)&SelectorUp == 1){
+        ControlStand:soundPlay("selector",0,CONFIGURATION_DATA[50,string])   
+    }
+    elseif(changed((SelectorDown & SelectorUp) == 0)&(SelectorDown & SelectorUp) == 0){
+        ControlStand:soundPlay("selectorn",0,CONFIGURATION_DATA[51,string])      
+    }
+    elseif(changed(SelectorDown == 1)&SelectorDown == 1){
+        ControlStand:soundPlay("selector",0,CONFIGURATION_DATA[52,string])  
+    }   
+}
+elseif(HasSelector == 0){
+    if(DynamicNotchLocal<2){
+        if(changed(IncreaseDynamics)&IncreaseDynamics){
+            ControlStand:soundPlay("dynamicsnotch",0,CONFIGURATION_DATA[8,string])
+        }
+        elseif(changed(DecreaseDynamics)&DecreaseDynamics){
+            ControlStand:soundPlay("dynamicsnotch",0,CONFIGURATION_DATA[9,string])
+        }
+    }    
 }
 
 if(IncreaseThrottle){
@@ -881,15 +903,6 @@ if(IncreaseThrottle){
 elseif(DecreaseThrottle){
     if(changed(NotchLocal)&NotchLocal){
         ControlStand:soundPlay("throttle",0,CONFIGURATION_DATA[7,string])
-    }
-}
-
-if(DynamicNotchLocal<2){
-    if(changed(IncreaseDynamics)&IncreaseDynamics){
-        ControlStand:soundPlay("dynamicsnotch",0,CONFIGURATION_DATA[8,string])
-    }
-    elseif(changed(DecreaseDynamics)&DecreaseDynamics){
-        ControlStand:soundPlay("dynamicsnotch",0,CONFIGURATION_DATA[9,string])
     }
 }
 

@@ -24,6 +24,11 @@ if(first()){
     DynamicThrottleAdvance = "titus's locomotive sound expansion pack/resources/gp38-2/cab/controls/throttle/clicks/s_gp38-2throttlea08.wav"
     DynamicThrottleRetreat = "titus's locomotive sound expansion pack/resources/gp38-2/cab/controls/throttle/clicks/s_gp38-2throttlea05.wav"
     
+    #Transition Lever
+    TransitionFS = "_jazzlok/switches/selector_action.wav"
+    TransitionNS = "_jazzlok/switches/regulator_notch.wav"
+    TransitionRS = "_jazzlok/switches/selector_action.wav"
+    
     # --// Air Brakes //--
     
     #Air Compressor
@@ -140,7 +145,7 @@ CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,Thr
 CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
 AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBellStart,
 MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM,
-EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd)
+EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd,TransitionFS,TransitionNS,TransitionRS)
 
 CONFIGURATION_CONTROL_DATA = Controls
 CONFIGURATION_ROUTING_DATA = Routing

@@ -34,8 +34,8 @@ if(first()){
     #Air Compressor
     Compressor_CFM = 254 
     MainReservoirVolume = 33.8
-    CompressorStart = "opencontrol/compressors/wbo/wbo9_loop.wav"
-    CompressorShutdown = "opencontrol/compressors/wbo/wbo9_end.wav"
+    CompressorStart = "opencontrol/compressors/wbo/wbo6_loop.wav"
+    CompressorShutdown = "opencontrol/compressors/wbo/wbo6_end.wav"
 
     #Automatic Brake Type
     AutomaticBrakeType = 0

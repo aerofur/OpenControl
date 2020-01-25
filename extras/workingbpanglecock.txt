@@ -4,12 +4,13 @@
 @persist MUHoseBodyGroup
 @trigger Valve
 @model
- 
 
 E = entity()
 #E:setAlpha(0)
 
 MUHoseBodyGroup = 0
+HandleColor = vec(150,0,0)
+HowFarOut = 0
 
 if(first()|dupefinished()){
 
@@ -18,12 +19,13 @@ if(first()|dupefinished()){
     A = 1
     holoCreate(A)
     holoParent(A,E)
-    holoColor(A,vec(0))
+    holoColor(A,HandleColor)
     holoScale(A,vec(1))
     holoModel(A, "models/titus's_propper_model_pack_2.4/propper/brakeline_valve_old.mdl")
-    holoPos(A,E:toWorld(vec(0,0,2.5)))
-    holoAng(A,E:toWorld(ang(0,180,0)))
-    holoEntity(A):setSubMaterial(4,"models/proppertextures/enamel_white")
+    holoPos(A,E:toWorld(vec(0,0,2.5+HowFarOut)))
+    holoAng(A,E:toWorld(ang(0,90,0)))
+    holoEntity(A):setSubMaterial(4,"models/proppertextures/acrylic")
+    holoEntity(A):setSubMaterial(3,"models/proppertextures/enamel_black")
     
     A = 2
     holoCreate(A)
@@ -31,8 +33,8 @@ if(first()|dupefinished()){
     holoColor(A,vec(255))
     holoScale(A,vec(1))
     holoModel(A, "models/lazpack/detail/brakehose.mdl")
-    holoPos(A,E:toWorld(vec(0,0,7.7)))
-    holoAng(A,E:toWorld(ang(-90,180,-(90+45))))
+    holoPos(A,E:toWorld(vec(0,0,7.7+HowFarOut)))
+    holoAng(A,E:toWorld(ang(-90,180,180)))
     holoClipEnabled(A,1,1)
     holoClip(A,1,vec(1.8,0,0),vec(1,0,0),0)
     holoEntity(A):setSubMaterial(1,"models/proppertextures/wheel")
@@ -41,13 +43,8 @@ if(first()|dupefinished()){
 }
 
 if(Valve){
-    holoBodygroup(A,1,1)    
+    holoBodygroup(1,1,1)    
 }
 elseif(!Valve){
-    holoBodygroup(A,1,0)    
+    holoBodygroup(1,1,0)    
 }
-
-
-
-
-

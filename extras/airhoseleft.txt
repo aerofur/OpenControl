@@ -137,7 +137,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
     
     #Cancelling, up here to prevent a link start with E unlinking
     if(((PressedR & !ReadyEUnlink) | (ReadyEUnlink & PressedE)) & EH == E & LinkStage == 0){
-        hint("Plugs unlinked.", 5)
+        hint("Hoses unlinked.", 5)
         O:soundPlay(3,0,"buttons/lever8.wav")
         E:constraintBreak("rope")
         clearLink()
@@ -152,7 +152,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
     
     if(PressedR & LinkStage>0){
         LinkStage = 0
-        hint("Plug link cancelled.",5)
+        hint("Hose link cancelled.",5)
         O:soundPlay(4,0,"buttons/lever8.wav")
     }
     
@@ -167,7 +167,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
     
     if(clk("linkcheck") & !BeingLinked & !Unlinking){
         LinkStage = 1
-        hint("Select another MU plug with key E to link them together.", 5)
+        hint("Select another Hose E2 with key E to link them together.", 5)
         O:soundPlay(1,0,"buttons/button16.wav")
     }
     
@@ -185,7 +185,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
         local Plug = DoNotWireIn[3,entity]
         local PlugRopePos = DoNotWireIn[2,vector]
         
-        hint("Auth successful, MU plugs linked!",5)
+        hint("Auth successful, Air Hoses linked!",5)
         
         O:soundPlay(2,0,"buttons/button19.wav")
         
@@ -221,7 +221,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
     }
     
     if(clk("compatlinkcheck") & !PlugMsgCancel){
-        hint("Start from the E2 MU plug, not from the Wire Plug.", 5)
+        hint("Start from the E2, not from the Wire Plug.", 5)
         O:soundPlay(6,0,"buttons/button7.wav")
     }
     
@@ -232,7 +232,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
         
         clearLink()
         
-        hint("Old plug detected, MU plug linked!", 5)
+        hint("Old plug detected, Air Hose linked!", 5)
         O:soundPlay(2,0,"buttons/button19.wav")
         
         E:constraintBreak("rope")
@@ -247,7 +247,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
     #removing links and cancelling
     
     if(PressedR & EH:type() == "gmod_wire_plug" & LinkStage == 0 & WonTourney){
-        hint("Can't unlink Wire plugs! Unlink it from the E2 MU plug.", 5)
+        hint("Can't unlink Wire plugs! Unlink it from the E2.", 5)
         O:soundPlay(6,0,"buttons/button7.wav")
     }
     
@@ -258,7 +258,7 @@ if((O:weapon():type()=="weapon_crowbar") & !(O:inVehicle())) {
     #switch away reset
     if(LinkStage>0){
         LinkStage = 0
-        hint("Plug link cancelled.",5)
+        hint("Hose link cancelled.",5)
     }
 
 }

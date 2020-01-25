@@ -208,12 +208,12 @@ if(EngineOn){
     
     if(DynamicFans>=1){
         DynamicFansC1 = DynamicFansC1 + (DynamicFansCA - DynamicFansC1) / max(10,0)     
-        holoAng(1,Locomotive:toWorld(ang(0,0+DynamicFansC1,0)))
+        holoAng(1,Locomotive:toWorld(ang(0,0-DynamicFansC1,0)))
     }
     
     if(DynamicFans>=2){
         DynamicFansC2 = DynamicFansC2 + (DynamicFansCA2 - DynamicFansC2) / max(10,0)     
-        holoAng(2,Locomotive:toWorld(ang(0,0+DynamicFansC2,0)))
+        holoAng(2,Locomotive:toWorld(ang(0,0-DynamicFansC2,0)))
     }
     
 #CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,
@@ -365,13 +365,13 @@ else{
 }
 
 FansC1 = FansC1 + (FansCA1 - FansC1) / max(SpinUp,0)     
-holoAng(3,Locomotive:toWorld(ang(0,0+FansC1,0)))
+holoAng(3,Locomotive:toWorld(ang(0,0-FansC1,0)))
 
 FansC2 = FansC2 + (FansCA2 - FansC2) / max(SpinUp,0)     
-holoAng(4,Locomotive:toWorld(ang(0,0+FansC2,0)))
+holoAng(4,Locomotive:toWorld(ang(0,0-FansC2,0)))
 
 FansC3 = FansC3 + (FansCA3 - FansC3) / max(SpinUp,0)     
-holoAng(5,Locomotive:toWorld(ang(0,0+FansC3,0)))
+holoAng(5,Locomotive:toWorld(ang(0,0-FansC3,0)))
 
 if(changed(Dynamics)&Dynamics){
     if(DynamicFans>=1){

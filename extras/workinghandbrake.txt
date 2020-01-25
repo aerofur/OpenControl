@@ -93,20 +93,26 @@ elseif(HandBrakeAmmount == 0){
     Handbrake = 0    
 }
 
-if(changed(Apply)&Apply){
-    soundPlay("hbapply",0,"opencontrol/handbrakes/handbrake-wheel-apply.wav")
+if(Handbrake!=1){
+    if(changed(Apply)&Apply){
+        soundPlay("hbapply",0,"opencontrol/handbrakes/handbrake-wheel-apply.wav")
+    }
 }
-elseif(changed((HandBrakeAmmount == HBA))&(HandBrakeAmmount == HBA)){
+
+if(changed((HandBrakeAmmount == HBA))&(HandBrakeAmmount == HBA)){
     soundStop("hbapply",0.2)    
 }
 elseif(changed(!Apply)&!Apply){
     soundStop("hbapply",0.2)    
 }
 
-if(changed(Release)&Release){
-    soundPlay("hbrelease",0,"opencontrol/handbrakes/handbrake-wheel-release.wav")
+if(Handbrake!=0){
+    if(changed(Release)&Release){
+        soundPlay("hbrelease",0,"opencontrol/handbrakes/handbrake-wheel-release.wav")
+    }
 }
-elseif(changed((HandBrakeAmmount == 0))&(HandBrakeAmmount == 0)){
+
+if(changed((HandBrakeAmmount == 0))&(HandBrakeAmmount == 0)){
     soundStop("hbrelease",0.2)    
 }
 elseif(changed(!Release)&!Release){

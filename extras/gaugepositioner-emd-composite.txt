@@ -1,0 +1,60 @@
+@name OpenControl/extras/GaugePositioner-EMD-Composite
+@inputs [ControlStand Gauge1 Gauge2 Gauge3 Gauge4]:entity
+@outputs
+@persist
+@trigger none
+@model
+
+E = ControlStand
+
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+    
+    local HowFarForward = 0.5
+    local HeyWhatAngleDoYouWant = 90
+
+    A = 1
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, "models/editor/axis_helper.mdl")
+    holoPos(A,E:toWorld(vec(0,-2+HowFarForward,40)))
+    holoAng(A,E:toWorld(ang(0,0,0)))
+    
+    A = 2
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, "models/editor/axis_helper.mdl")
+    holoPos(A,E:toWorld(vec(-5,-2+HowFarForward,40)))
+    holoAng(A,E:toWorld(ang(0,0,0)))
+    
+    A = 3
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, "models/editor/axis_helper.mdl")
+    holoPos(A,E:toWorld(vec(-10,-2+HowFarForward,40)))
+    holoAng(A,E:toWorld(ang(0,0,0)))
+    
+    A = 4
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, "models/editor/axis_helper.mdl")
+    holoPos(A,E:toWorld(vec(-15,-2+HowFarForward,40)))
+    holoAng(A,E:toWorld(ang(0,0,0)))
+
+    Gauge1:setPos(E:toWorld(vec(0,-2+HowFarForward,40)))
+    Gauge1:setAng(E:toWorld(ang(0,HeyWhatAngleDoYouWant,0)))
+    Gauge2:setPos(E:toWorld(vec(-5,-2+HowFarForward,40)))
+    Gauge2:setAng(E:toWorld(ang(0,HeyWhatAngleDoYouWant,0)))
+    Gauge3:setPos(E:toWorld(vec(-10,-2+HowFarForward,40)))
+    Gauge3:setAng(E:toWorld(ang(0,HeyWhatAngleDoYouWant,0)))
+    Gauge4:setPos(E:toWorld(vec(-15,-2+HowFarForward,40)))
+    Gauge4:setAng(E:toWorld(ang(0,HeyWhatAngleDoYouWant,0)))
+}

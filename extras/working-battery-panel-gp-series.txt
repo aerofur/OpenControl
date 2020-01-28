@@ -1,0 +1,168 @@
+@name OpenControl/extras/working-battery-panel-gp-series
+@inputs BatteryKnife
+@outputs BatteryOutput TransformerHum
+@persist StandbyPosition BattPosition InrushArk TransformerHum
+@trigger BatteryKnife
+@model models/jazzie/trains/locomotives/emd/cab/battery_panel_gp28-35.mdl
+
+E = entity()
+
+if(dupefinished() | duped()){ reset() }
+if(first()){ 
+    
+    # wow, ew, jazzlok model, well we dont have any others. :)
+    # But hey, it works, and has inrush current arks
+    # oh and there are no sounds, too lazy. Add your own if you want
+    
+    StandbyPosition = -175
+    
+    E:setSubMaterial(1,"models/proppertextures/aluminum")
+    E:setSubMaterial(2,"models/proppertextures/rubber")
+    E:setSubMaterial(3,"models/proppertextures/acrylic_white")
+    E:setSubMaterial(4,"models/proppertextures/cabmetal_gray")
+    E:setSubMaterial(5,"models/proppertextures/acrylic") 
+    E:setColor(vec(103,86,67)*0.5)
+
+    A = 1
+    holoCreate(A)
+    holoParent(A,E)
+    holoColor(A,vec(255))
+    holoScale(A,vec(1))
+    holoModel(A, "models/editor/axis_helper.mdl")
+    holoPos(A,E:toWorld(vec(0,0,0)))
+    holoAng(A,E:toWorld(ang(0,0,StandbyPosition)))
+    holoAlpha(A,0)
+    
+    A = 2
+    holoCreate(A)
+    holoParent(A,1)
+    holoColor(A,(vec(103,86,67)*0.5))
+    holoScale(A,vec(1))
+    holoModel(A, "models/jazzie/trains/locomotives/emd/cab/panel_breaker_battery.mdl")
+    holoPos(A,holoEntity(1):toWorld(vec(0,-2.5,0)))
+    holoAng(A,holoEntity(1):toWorld(ang(0,0,0)))
+    holoEntity(A):setSubMaterial(1,"models/proppertextures/acrylic")
+    holoEntity(A):setSubMaterial(2,"models/proppertextures/cabmetal_gray")
+
+    BattPosition = 0  
+    InrushArk = 0
+    local ArkTexture = "sprites/lamphalo.vmt"
+    spriteSpawn(1,ArkTexture,E:toWorld(vec(1.2,-3,0)),vec(0,161,255),200,0.2)
+    spriteSpawn(2,ArkTexture,E:toWorld(vec(-1.2,-3,0)),vec(0,161,255),200,0.2)
+    spriteEnable(1,0)
+    spriteEnable(2,0)
+    
+    soundPlay("hum",0,"ambient/machines/power_transformer_loop_1.wav")
+    soundVolume("hum",0)
+}
+
+interval(150) # ah yes, i know I could use, say, 200... but it doenst move smoothly as we can see things stop and start above 150~ish ms (for humans, if ur not uhhhhh??)
+
+
+if(BatteryKnife){
+    if(!BatteryOutput){
+        if(BattPosition < abs((StandbyPosition - -40))){
+            BattPosition += 15
+            BatteryOutput = 0
+        }
+        elseif(BattPosition == abs((StandbyPosition - -40))){
+            timer("ark",1000)
+            BatteryOutput = 0
+        }    
+        elseif(BattPosition > abs((StandbyPosition - -40))){
+            BattPosition = abs((StandbyPosition - -40))
+        }
+        
+        if(clk("ark")){
+            if(BattPosition == abs((StandbyPosition - -40))){
+                BatteryOutput = 1
+                BattPosition = abs(StandbyPosition)
+                TransformerHum = 1
+            }
+            stoptimer("ark")    
+        }
+    }
+}
+elseif(!BatteryKnife){
+    BatteryOutput = 0  
+    TransformerHum = 0
+    
+    if(BattPosition != 0){ 
+        BattPosition -= 20
+    }
+    
+    if(BattPosition<0){
+        BattPosition = 0    
+    }
+}
+
+if(BatteryOutput){
+    if(TransformerHum != 0.35){
+        TransformerHum -= 0.005
+    }
+    
+    if(TransformerHum < 0.35){
+        TransformerHum = 0.35
+    }
+}
+elseif(!BatteryOutput){
+    TransformerHum = 0    
+}
+
+soundVolume("hum",TransformerHum)
+
+holoAng(1,E:toWorld(ang(0,0,(StandbyPosition+BattPosition))))
+
+if(changed(BatteryOutput)&BatteryOutput){
+    InrushArk = 1
+    timer("letThereBeLight",40)
+    soundPlay("lever",0,"gsgtrainsounds/misc/reverser_f.wav")
+    soundPitch("lever",65)
+    soundPlay("ark",0,"ambient/energy/newspark06.wav")
+    spriteEnable(1,1)
+    spriteEnable(2,1)
+
+}
+elseif(changed(BatteryOutput)&!BatteryOutput){
+    InrushArk = 1
+    timer("letThereBeLight",40)
+    soundPlay("lever",0,"gsgtrainsounds/misc/reverser_f.wav")
+    soundPitch("lever",65)
+    soundVolume("hum",0)
+    soundPlay("ark",0,"ambient/energy/newspark05.wav")
+    spriteEnable(1,1)
+    spriteEnable(2,1)
+
+}
+
+if(clk("letThereBeLight")){
+    if(InrushArk == 1){
+        InrushArk = 0
+        spriteEnable(1,0)
+        spriteEnable(2,0)
+    }
+    #lightRemoveAll()
+    stoptimer("letThereBeLight")
+}
+
+#[
+    lightCreate(1,E:toWorld(vec(0,-3,0))+vec(),vec(0,80,255),40,4)
+    lightParent(1,E) 
+    lightRemoveAll()
+
+if(InrushArk == 1){
+    InrushArk = 0
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

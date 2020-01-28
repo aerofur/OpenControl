@@ -6,6 +6,7 @@
 @trigger none
 @model
 Controls = table()
+
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
 

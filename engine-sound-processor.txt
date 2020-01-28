@@ -1,5 +1,5 @@
 @name OpenControl/engine-sound-processor
-@inputs Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 [CONTROL_STAND_DATA]:array 
+@inputs Locomotive:entity Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 [CONTROL_STAND_DATA]:array 
 @outputs [ENGINE_SOUND_DATA]:array Primed1 Primed2 PrimerSet1 PrimerSet2 Clag1 Clag2 On1 On2 EngineNotch1 EngineSpeed1
 @persist Startup_Mode Shutdown_Mode FuelSaverMode FuelSaverDelay NumThrottleNotches NumEngineNotches PrimerDuration MU_Master
 @persist [Startup_Hi Startup_Lo Shutdown_Hi Shutdown_Lo TransitionPath TransitionToLow TransitionToHigh Idle_Low]:string [Notches EngineBehavior UpDelays DownDelays UpOverrides DownOverrides]:array
@@ -119,7 +119,7 @@ Clag2 = 0
 LowIdleActual1 = 1
 LowIdling2 = 0
 
-E = entity()
+E = Locomotive
 RLCPT = E
 O = owner()
 W = E #E:isWeldedTo()

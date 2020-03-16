@@ -1,5 +1,5 @@
 # OpenControl
-![pre-release](https://github.com/TitusStudiosMediaGroup/OpenControl/workflows/pre-release/badge.svg)
+> ![pre-release](https://github.com/TitusStudiosMediaGroup/OpenControl/workflows/pre-release/badge.svg)
 An Open Source Locomotive Control Chip for Garry's Mod built on Wiremod's Expression 2 Environment
 
 

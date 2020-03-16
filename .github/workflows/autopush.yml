@@ -1,0 +1,7 @@
+- name: Upload release
+  uses: yakuhzi/action-release@v1
+  with:
+    file: /.*
+    changelog: /CHANGELOG.txt
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

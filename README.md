@@ -6,8 +6,10 @@ An Open Source Locomotive Control Chip for Garry's Mod built on Wiremod's Expres
 
 The scope of the OpenControl Project is to build a robust, light-weight and life-like simulation of a Locomotive, that is [Open Source](https://opensource.com/resources/what-open-source), Open to community contributions, and built by a group of diverse Developers.
 
+![pre-release](https://github.com/TitusStudiosMediaGroup/OpenControl/workflows/pre-release/badge.svg)
+
 ## To-Do List
-This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#roadmap) for more info.
+This is a list of what we have to complete, fix, or build. *(These may be out of date)*
 
   * [x] Air Braking System
     * [x] Compressor
@@ -15,21 +17,19 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
     * [x] Main Reservoir
     * [x] Equalising Reservoir
     * [x] Brake Pipe
-    * [x] Brake Cut-Out Logic
-    * [x] Brake Pipe Pressure Loss /time (0.08 ppr1-ppr4)
-    * [x] Main Reservoir Pressure Loss /time (0.25 ppr1-ppr4)
-    * [x] Brake Pipe Logic
-    * [x] Equalization Function
-    * [x] EOT Pressure Drop
-    * [x] Equalising Reservoir ~ Main Reservoir - Pump Logic
-    * [x] Equalising Reservoir ~ Brake Pipe - Pump Logic
-    * [x] Brake Type Settings (26L / 26C / 6SL / etc)
-  * [ ] Traction System
-    * [ ] Generator Transition
-    * [x] Traction Motor Transition
-    * [ ] AC & DC Motor/Gen Systems
-    * [x] Traction Motor Logic
-    * [x] Air Brake Force Application
+    * [x] Brake Cut-in/out
+    * [x] Trainline 
+    * [x] Trainline EOT drop
+    * [x] Dynamic Air 
+    * [x] Pressure Equalization between MainRes fill up and EQ
+    * [x] Pressure Equalization between EQ and BP (depending on BCO setting)
+    * [x] Pressure Equalization between BP and TL (MU & Cars, no Cars, MUed, Single)
+    * [x] Pressure Equalization logic between all Res's depending on brake piping
+    * [x] PCS
+    * [x] MainRes air dryer
+    * [ ] Control Air
+    * [x] MainRes "jump" on Bail
+    * [x] Locomotive Brake res logic
   * [x] Physics System
   * [x] User Control
   * [x] I/O
@@ -46,13 +46,6 @@ This is a list of what we have to complete, fix, or build. Refer to [Roadmap](#r
     * [x] Communitcation between Control Stand and Main Chip
   * [x] Configs
   
-  
-## Roadmap
-
-We do not have an official *"Done by Date"*, OpenControl is a community contribution based Project, and will not have a dead-end. However, we plan to have the first Beta release complete by, Mid-Late 2020.
-
-![OpenControl Timeline](/src/figs/PNG/developertimeline.png)
-
 ## How it all works
 
 **NOTE:** This explanation is *very* simplified.

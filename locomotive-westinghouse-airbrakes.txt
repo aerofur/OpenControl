@@ -6,37 +6,9 @@
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local IndNotch BrakePipeLocalCutin TrainLine
 @persist TotalBPVol BrakePipeLocalVol TrainlineEQ TLBP_Equal ERBP_Equal ERBP_EqualLOCKED BrakePipeLocal BrakePipe CompRefill BrakeLinePumpLoss MRCO EQCO TLCO TLDropToZero AirMU
 @persist COMPEngineOn AirSpit IsLead BrakePipeAnglecock BP_Open NumRes NominalFlowPHYS AutoPressureSet TELocal LastCarCount HoldatZero FeedPressure MainResFeedPressure MainResRechargePressure
-@trigger none
+@persist BPAC_AirMU
+@trigger none 
 @model
-
-if(BPAngleCockFRONT){
-    if(AirMU_FrontIN[1,string] == "opencontrol"){
-        BrakePipeAnglecock = 1
-    }
-    else{
-        BrakePipeAnglecock = 1
-    }
-}
-elseif(BPAngleCockREAR){
-    if(AirMU_RearIN[1,string] == "opencontrol"){
-        BrakePipeAnglecock = 1
-    }
-    else{
-        BrakePipeAnglecock = 1
-    }
-}
-elseif(BPAngleCockREAR & BPAngleCockFRONT){
-    if(AirMU_RearIN[1,string] == "opencontrol" & AirMU_FrontIN[1,string] == "opencontrol"){
-        BrakePipeAnglecock = 1
-    }
-    else{
-        BrakePipeAnglecock = 1
-    }
-}
-
-if(BPAngleCockREAR == 0 & BPAngleCockFRONT == 0){
-    BrakePipeAnglecock = 0
-}
 
 
 if(dupefinished() | duped()){ reset() }
@@ -58,9 +30,9 @@ if(first()){
     NumRes = 2.5
     NominalFlowPHYS = 0.865
     
-    MainReservoir = 0
-    EqualizingReservoir = 0
-    BrakePipeLocal = 0
+    MainReservoir = 140
+    EqualizingReservoir = 90
+    BrakePipeLocal = 90
     BrakeCylinder = 65
     
     FeedPressure = CONFIGURATION_DATA[53,number]
@@ -86,13 +58,10 @@ if(first()){
     BP_Open = 0
     LastCarCount = 0
     HoldatZero = 0
-    
-    # Function Galore 
-    
-    function number getWeatherCondition(){
-        #Reserved for later use    
-    }
-    
+    BPAC_AirMU_Local = 0
+    BPAC_AirMU = 0
+    BPAC_AirMU_CameFromMU = 0
+
     function number smooth(Var,SmoothAmount,ID:string,DefaultVal){
         if(!SmoothTable:exists(ID)){
             SmoothTable[ID,number] = DefaultVal
@@ -111,6 +80,43 @@ if(first()){
 if(CONTROL_STAND_DATA[19,number]){
     interval(150)
 }
+
+if(BPAngleCockFRONT){
+    if(AirMU_FrontIN[1,string] == "opencontrol"){
+        BrakePipeAnglecock = 1
+        BPAC_AirMU = 0
+    }
+    else{
+        BrakePipeAnglecock = 1
+        BPAC_AirMU = 1
+    }
+}
+elseif(BPAngleCockREAR){
+    if(AirMU_RearIN[1,string] == "opencontrol"){
+        BrakePipeAnglecock = 1
+        BPAC_AirMU = 0
+    }
+    else{
+        BrakePipeAnglecock = 1
+        BPAC_AirMU = 1
+    }
+}
+elseif(BPAngleCockREAR & BPAngleCockFRONT){
+    if(AirMU_FrontIN[1,string] == "opencontrol" & AirMU_RearIN[1,string] == "opencontrol"){
+        BrakePipeAnglecock = 1
+        BPAC_AirMU = 0
+    }
+    else{
+        BrakePipeAnglecock = 1
+        BPAC_AirMU = 1
+    }
+}
+
+if(BPAngleCockREAR == 0 & BPAngleCockFRONT == 0){
+    BrakePipeAnglecock = 0
+    BPAC_AirMU = 1
+}
+
 
 CarCount = LOCOMOTIVE_PROCESSOR[1,number]
 
@@ -275,7 +281,7 @@ if(COMPEngineOn){
     ]#
     if(HoldatZero == 0){
         if(BrakePipeAnglecock == 1){
-            if(CarCount<2){
+            if(CarCount<2 & BPAC_AirMU){
                 TrainLine = 0
                 BP_Open = 1
                 
@@ -287,7 +293,7 @@ if(COMPEngineOn){
                     BrakePipeLocal = 0
                 }
             }
-            elseif(CarCount>1){
+            else{
                 if(HoldatZero == 0){
                     BP_Open = 0
                 }

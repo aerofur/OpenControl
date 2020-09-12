@@ -1,5 +1,5 @@
 @name OpenControl/sound-processor
-@inputs Locomotive:entity [LOCOMOTIVE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_CIRCUIT_DATA ENGINE_SOUND_DATA Trucks]:array
+@inputs Locomotive:entity [LOCOMOTIVE_AIRBRAKES_DATA CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_PROCESSOR ENGINE_SOUND_DATA Trucks]:array
 @outputs F1 FansC1 FansCA1
 @persist [Fan1Position Fan2Position Fan3Position DynamicFan1Position DynamicFan2Position]:vector Fans Dynamics DynamicFans HasDynamics
 @persist DynamicFansCA DynamicFansC1 DynamicFansCA2 DynamicFansC2 FansC1 FansC2 FansC3 FansCA1 FansCA2 FansCA3 FanSpeed SpinUp
@@ -8,20 +8,8 @@
 @trigger none
 @model
 
-#ENGINE_SOUND_DATA = array(Primed1,Primed2,PrimerSet1,PrimerSet2,Clag1,Clag2,On1,On2,EngineNotch1,EngineSpeed1)
 EngineOn = (ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number])
 
-#[
-CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
-CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
-AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBellStart,
-MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM,
-EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd)
-
-CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control)
-
-]#
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
     
@@ -187,7 +175,7 @@ timer("stopthemfans",100)
 
 interval(150)
 
-MPH = LOCOMOTIVE_CIRCUIT_DATA[3,number]
+MPH = LOCOMOTIVE_PROCESSOR[3,number]
 Dynamics = (CONTROL_STAND_DATA[12,number]>0)
 
 if(EngineOn){
@@ -301,9 +289,9 @@ if(EngineOn){
     
     if(DroneQ){
         soundPitch("traction-motor1",100*MPH/40)
-        soundVolume("traction-motor1",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_CIRCUIT_DATA[2,number])/200,0.5,1))
+        soundVolume("traction-motor1",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_PROCESSOR[2,number])/200,0.5,1))
         soundPitch("traction-motor2",100*MPH/40)
-        soundVolume("traction-motor2",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_CIRCUIT_DATA[2,number])/200,0.5,1))
+        soundVolume("traction-motor2",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_PROCESSOR[2,number])/200,0.5,1))
     }
     
     if((MPH>1) & !RollQ){
@@ -317,7 +305,7 @@ if(EngineOn){
     
     if(RollQ){
         if(!RailType){
-            local LeadTruck = (LOCOMOTIVE_CIRCUIT_DATA[7,number]>0) ? FrontTruck : RearTruck
+            local LeadTruck = (LOCOMOTIVE_PROCESSOR[7,number]>0) ? FrontTruck : RearTruck
             rangerFilter(W)
             rangerFilter(LeadTruck)
             local CCRanger = rangerOffset(128,LeadTruck:pos(),vec(0,0,-1))
@@ -336,8 +324,8 @@ if(EngineOn){
     
     #LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train)
     
-    local Braking_Train = LOCOMOTIVE_CIRCUIT_DATA[6,number]
-    local Braking_Loco = LOCOMOTIVE_CIRCUIT_DATA[5,number]
+    local Braking_Train = LOCOMOTIVE_PROCESSOR[6,number]
+    local Braking_Loco = LOCOMOTIVE_PROCESSOR[5,number]
     
     if(Braking_Loco & (inrange(MPH,0.5,8)) & !SquealQ){
         SquealQ = 1

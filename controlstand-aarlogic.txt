@@ -1,6 +1,6 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout GroundRelayReset UsingRearSeat InsertReverser Horn 
-@inputs [MU_Front_In MU_Rear_In LOCOMOTIVE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA LOCOMOTIVE_CIRCUIT_DATA]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
+@inputs [MU_Front_In MU_Rear_In LOCOMOTIVE_AIRBRAKE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA LOCOMOTIVE_PROCESSOR]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
 @outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string ThrottleA ThrottleB ThrottleC ThrottleD 
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
@@ -8,7 +8,7 @@
 @persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake HandleOff
 @persist Notch UnNotchThrottleF UnNotchThrottleB Reverser ReverserLocal HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock 
 @persist DynamicNotchLocal DynamicsSetupLocal DynamicsPowerZoneLocal DynamicUnlockLocal NotchLocal Isolation EngineRunLocal GenFieldLocal GroundRelayResetLocal DBWarning MUReverserFW MUReverserBW
-@persist MUCompressor IsLead SelectorNotch SelectorMove
+@persist MUCompressor IsLead SelectorNotch SelectorMove LocomotivePOS
 @trigger none 
 @model
 
@@ -20,9 +20,10 @@ else{
 }
 
 if(IsLead == 0){
+    LocomotivePOS = 73
     if(!Control & !EngineRun & !GenField & !FuelPump){
-        if(->MU_Front_In | ->MU_Rear_In){
-            if(MU_Front_In[13,number] == 74){
+        if(MU_Front_In[27,number] == 1){
+            if(MU_Front_In[13,number] > 0){
                 Reverser = (MU_Front_In[8,number] - MU_Front_In[9,number])
                 DynamicNotch = MU_Front_In[21,number]
                 DynamicsSetup = MU_Front_In[17,number]
@@ -35,7 +36,9 @@ if(IsLead == 0){
                 DBWarning = MU_Front_In[20,number]
                 MUCompressor = MU_Front_In[22,number]
             }
-            elseif(MU_Rear_In[13,number] == 74){
+        }
+        elseif(MU_Rear_In[27,number] == 1){
+            if(MU_Rear_In[13,number] > 0){
                 Reverser = -(MU_Rear_In[8,number] - MU_Rear_In[9,number])
                 DynamicNotch = MU_Rear_In[21,number]
                 DynamicsSetup = MU_Rear_In[17,number]
@@ -46,19 +49,47 @@ if(IsLead == 0){
                 GenFieldLocal = MU_Rear_In[6,number]
                 GroundRelayResetLocal = MU_Rear_In[26,number]
                 DBWarning = MU_Rear_In[20,number]
+                MUCompressor = MU_Rear_In[22,number]
+            }
+        }
+        elseif(MU_Front_In[27,number] == 0 & MU_Rear_In[27,number] == 0){
+            if(MU_Front_In[13,number] > MU_Rear_In[13,number]){
+                Reverser = (MU_Front_In[8,number] - MU_Front_In[9,number])
+                DynamicNotch = MU_Front_In[21,number]
+                DynamicsSetup = MU_Front_In[17,number]
+                DynamicsPowerZone = MU_Front_In[24,number]
+                DynamicUnlock = 0 
+                Notch = MU_Front_In[15,number] + MU_Front_In[12,number] + MU_Front_In[7,number] + MU_Front_In[3,number]
+                EngineRunLocal = MU_Front_In[16,number]
+                GenFieldLocal = MU_Front_In[6,number]
+                GroundRelayResetLocal = MU_Front_In[26,number]
+                DBWarning = MU_Front_In[20,number]
                 MUCompressor = MU_Front_In[22,number]
             }
             else{
-                Notch = 0
-                Reverser = 0
-                DynamicNotch = 0
-                DynamicsSetup = 0
-                DynamicsPowerZone = 0
-                DynamicUnlock = 0    
-                EngineRunLocal = EngineRun
-                GenFieldLocal = GenField
-                MUCompressor = 0
+                Reverser = -(MU_Rear_In[8,number] - MU_Rear_In[9,number])
+                DynamicNotch = MU_Rear_In[21,number]
+                DynamicsSetup = MU_Rear_In[17,number]
+                DynamicsPowerZone = MU_Rear_In[24,number]
+                DynamicUnlock = 0 
+                Notch = MU_Rear_In[15,number] + MU_Rear_In[12,number] + MU_Rear_In[7,number] + MU_Rear_In[3,number]
+                EngineRunLocal = MU_Rear_In[16,number]
+                GenFieldLocal = MU_Rear_In[6,number]
+                GroundRelayResetLocal = MU_Rear_In[26,number]
+                DBWarning = MU_Rear_In[20,number]
+                MUCompressor = MU_Rear_In[22,number]
             }
+        }
+        else{
+            Notch = 0
+            Reverser = 0
+            DynamicNotch = 0
+            DynamicsSetup = 0
+            DynamicsPowerZone = 0
+            DynamicUnlock = 0    
+            EngineRunLocal = EngineRun
+            GenFieldLocal = GenField
+            MUCompressor = 0
         }
     }
 }
@@ -66,6 +97,7 @@ elseif(IsLead == 1){
     EngineRunLocal = EngineRun
     GenFieldLocal = GenField    
     MUCompressor = 0
+    LocomotivePOS = 74
 }
 
 switch(Notch){
@@ -141,11 +173,19 @@ elseif(Reverser == -1){
 }
 
 
-MU_Rear_Out = array(0,LOCOMOTIVE_CIRCUIT_DATA[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
-0,0,ThrottleB,74,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,DBWarning,DynamicNotchLocal,LOCOMOTIVE_DATA[10,number],0,DynamicsPowerZone,0,GroundRelayResetLocal,0)
+if(!IsLead){
+    if((MU_Front_In[13,number] > 0) | (MU_Rear_In[13,number] > 0)){
+        LocomotivePOS = (MU_Front_In[13,number]-1)
+        LocomotivePOS = (MU_Rear_In[13,number]-1)
+    }
+}
 
-MU_Front_Out = array(0,LOCOMOTIVE_CIRCUIT_DATA[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
-0,0,ThrottleB,74,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,DBWarning,DynamicNotchLocal,LOCOMOTIVE_DATA[10,number],0,DynamicsPowerZone,0,GroundRelayResetLocal,0)
+
+MU_Front_Out = array(0,LOCOMOTIVE_PROCESSOR[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
+0,0,ThrottleB,LocomotivePOS,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,DBWarning,DynamicNotchLocal,LOCOMOTIVE_AIRBRAKE_DATA[10,number],0,DynamicsPowerZone,0,GroundRelayResetLocal,IsLead)
+
+MU_Rear_Out = array(0,LOCOMOTIVE_PROCESSOR[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
+0,0,ThrottleB,LocomotivePOS,0,ThrottleA,EngineRunLocal,DynamicsSetup,0,0,DBWarning,DynamicNotchLocal,LOCOMOTIVE_AIRBRAKE_DATA[10,number],0,DynamicsPowerZone,0,GroundRelayResetLocal,IsLead)
 
 
 if(IsLead == 1){
@@ -195,10 +235,10 @@ else{
     GroundRelayResetLocal = GroundRelayResetLocal    
 }
 
-if(LOCOMOTIVE_CIRCUIT_DATA[16,number]){
+if(LOCOMOTIVE_PROCESSOR[16,number]){
     DBWarning = 1        
 }
-elseif(LOCOMOTIVE_CIRCUIT_DATA[16,number] == 0){
+elseif(LOCOMOTIVE_PROCESSOR[16,number] == 0){
     DBWarning = 0  
 }
 
@@ -216,7 +256,7 @@ ServiceRelease = 1
 IndHiss = 1
 IndRelease = 1
 EmergRelease = 0
-LocoBrakePOS = LOCOMOTIVE_DATA[4,number]
+LocoBrakePOS = LOCOMOTIVE_AIRBRAKE_DATA[4,number]
 
 
 NotchLocal = 0
@@ -677,8 +717,8 @@ if(!Independent_Bail){
 }
 elseif(Independent_Bail){
     ControlStand:setBodygroup(5,0)
-    if(LocoBrakePOS>LOCOMOTIVE_DATA[4,number]){
-        LocoBrakePOS = LOCOMOTIVE_DATA[4,number]
+    if(LocoBrakePOS>LOCOMOTIVE_AIRBRAKE_DATA[4,number]){
+        LocoBrakePOS = LOCOMOTIVE_AIRBRAKE_DATA[4,number]
     }
 }
 
@@ -788,7 +828,7 @@ elseif(changed(Independent_Bail)&!Independent_Bail){
 
 if(CONFIGURATION_DATA[23,number] == 0){
     if(!Independent_Bail){
-        if(LOCOMOTIVE_DATA[4,number]<65){
+        if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<65){
             if(IndHiss){
                 if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
                     ControlStand:soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
@@ -802,7 +842,7 @@ if(CONFIGURATION_DATA[23,number] == 0){
                 stoptimer("indhissRLA")
             }
         }
-        if(LOCOMOTIVE_DATA[4,number]>0){ 
+        if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]>0){ 
             if(IndRelease){
                 if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
                     ControlStand:soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])
@@ -820,8 +860,8 @@ if(CONFIGURATION_DATA[23,number] == 0){
 }
 elseif(CONFIGURATION_DATA[23,number] == 1){
     if(!Independent_Bail){
-        if(LOCOMOTIVE_DATA[7,number]!=1){
-            if(LOCOMOTIVE_DATA[4,number]<65){
+        if(LOCOMOTIVE_AIRBRAKE_DATA[7,number]!=1){
+            if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<65){
                 if(IndHiss){
                     if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
                         ControlStand:soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
@@ -835,7 +875,7 @@ elseif(CONFIGURATION_DATA[23,number] == 1){
                     stoptimer("indhissRLA")
                 }
             }
-            if(LOCOMOTIVE_DATA[4,number]>0){ 
+            if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]>0){ 
                 if(IndRelease){
                     if(changed(DecreaseLocoBrake)&DecreaseLocoBrake){
                         ControlStand:soundPlay("indrelease",0,CONFIGURATION_DATA[19,string])

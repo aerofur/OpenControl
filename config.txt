@@ -35,6 +35,9 @@ if(first()){
     #Air Compressor
     Compressor_CFM = 254 
     MainReservoirVolume = 33.8
+    FeedPressure = 90 #Max Pressure for the BP/EQ
+    MainReservoirPressure = 140 #Max Pressure for the MR
+    MainReservoirRechragePressure = 130 #Min Pressure for the MR (This is the pressure that once it drops down it will rechrage from, ex, <130 = recharge to 140.)
     CompressorStart = "opencontrol/compressors/wbo/wbo6_loop.wav"
     CompressorShutdown = "opencontrol/compressors/wbo/wbo6_end.wav"
 
@@ -72,6 +75,8 @@ if(first()){
     BrakeSqueal = "gsgtrainsounds/wheels/brake_3_loud.wav"
     RollSoundWelded = "gsgtrainsounds/misc/wheels_welded.wav"
     RollSoundJointed = "gsgtrainsounds/misc/wheels_jointed.wav"
+    WheelSlipLoop = "gsgtrainsounds/wheels/wheelslip_loop.wav"
+    WheelSlipEnd = "gsgtrainsounds/wheels/wheelslip_end.wav"
 
     AlarmBellStart = "gsgtrainsounds/misc/alarmbell_loop.wav"
     AlarmBellEnd = "gsgtrainsounds/misc/alarmbell_end.wav"
@@ -146,7 +151,8 @@ CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,Thr
 CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
 AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBellStart,
 MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM,
-EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd,TransitionFS,TransitionNS,TransitionRS)
+EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd,TransitionFS,TransitionNS,TransitionRS,FeedPressure,MainReservoirPressure,MainReservoirRechragePressure,
+WheelSlipLoop,WheelSlipEnd)
 
 CONFIGURATION_CONTROL_DATA = Controls
 CONFIGURATION_ROUTING_DATA = Routing

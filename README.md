@@ -27,10 +27,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Pressure Equalization logic between all Res's depending on brake piping
     * [x] PCS
     * [x] MainRes air dryer
-    * [ ] Control Air
+    * [x] Control Air
     * [x] MainRes "jump" on Bail
     * [x] Locomotive Brake res logic
   * [x] Physics System
+    * [x] Playerbased Speed and Physics Calculations
+    * [x] WheelSlip
   * [x] User Control
   * [x] I/O
     * [x] MU Hose Functionality
@@ -39,11 +41,13 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * Make handbrake e2 that uses `eyeTrace()`, meaning you dont need to use buttons. (E to apply, Shift+E to release)
     * [x] Locomotive Fan E2
       * Adds working fans to the locomotive with sounds. This may be required to have on the locomotive for sounds, otherwise no dyno / fan sounds, etc.
+    * [ ] Outputs for External E2s
   * [x] Control Stand
-    * [x] 26L Brake Control 
-      * [x] 60 sec PCS cutout
-      * [x] Brake Position Logic
-    * [x] Communitcation between Control Stand and Main Chip
+    * [x] 26L Brake Control Logic
+  * [x] Multiple Units
+    * [x] AAR 27 Pin Standard
+    * [x] Air System MU
+    * [x] MU2A
   * [x] Configs
   
 ## How it all works

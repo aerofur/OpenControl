@@ -6,7 +6,7 @@
 @persist TE V BHQ Braking_Train Braking_Loco BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux CarCount BEVLB TrainWeight
 @persist DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay DBArking TMArking FixNils RampedMotorVoltage EngineRPMCal DynoHPINCR FBWD FFWD
 @persist Motors MaxGeneratorCurrent MaxTractionMotorCurrent MaxContinuousTractionMotorCurrent MaxDynamicCurrent MaxContinuousDynamicCurrent EngineIdleRPM EngineRedlineRPM NumNotches Axles
-@persist Horsepower Weight BaseSpeed TopSpeed ClaspBrakes [AlarmBellStart AlarmBellEnd]:string Adhesion WeightOnAxle TE_Starting Dynamics LowSpeedCurve SlippingFactor
+@persist Horsepower Weight BaseSpeed TopSpeed ClaspBrakes [AlarmBellStart AlarmBellEnd]:string Adhesion WeightOnAxle TE_Starting Dynamics LowSpeedCurve SlippingFactor FeedPressure
 @trigger none
 @model
 
@@ -35,6 +35,7 @@ if(first()){
     AlarmBellStart = CONFIGURATION_DATA[32,string]
     AlarmBellEnd = CONFIGURATION_DATA[49,string]
     Adhesion = CONFIGURATION_DATA[53,number]
+    FeedPressure = CONFIGURATION_DATA[53,number]
     
     MainGeneratorVoltage = 0
     MaxGeneratorVoltage = 1500
@@ -497,34 +498,34 @@ elseif(changed(CONTROL_STAND_DATA[25,number])&CONTROL_STAND_DATA[25,number]){
 }
 
 
-if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<10){
+if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<5){
     BEVLB = 0
     BE = 0
 }
-elseif(LOCOMOTIVE_AIRBRAKE_DATA[4,number]>10){
+elseif(LOCOMOTIVE_AIRBRAKE_DATA[4,number]>5){
     BEVLB = 40000*(abs((LOCOMOTIVE_AIRBRAKE_DATA[4,number]))/65)
     BE = (LOCOMOTIVE_AIRBRAKE_DATA[4,number]*(Holding ? 0 : BEVLB*(ClaspBrakes ? 1.25 : 1)))
 }
 
 
-if((Holding & round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])<90)){
+if((Holding & round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])<(FeedPressure))){
     AutoMux = 1    
 }
-elseif((!Holding & round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])>89)){
+elseif((!Holding & round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])>(FeedPressure-1))){
     AutoMux = 0    
 }
 
 if(CONTROL_STAND_DATA[7,number] == 1){
     if(CONTROL_STAND_DATA[26,number] == 0){
-        if(round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])<89){
+        if(round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])<(FeedPressure-1)){
             if(MaxTrainBrakeForce == 0){
-                BEAuto = ((round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])-90)*(AutoMux ? 0 : 150000))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
+                BEAuto = ((round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])-(FeedPressure))*(AutoMux ? 0 : 150000))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
             }
             elseif(MaxTrainBrakeForce>0){
-                BEAuto = (MaxTrainBrakeForce*(round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])-90)*(AutoMux ? 0 : 40))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
+                BEAuto = ((1+MaxTrainBrakeForce)*(round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])-(FeedPressure))*(AutoMux ? 0 : 40))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
             }
         }
-        elseif(round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])>89){
+        else{
             BEAuto = 0    
         }
     }
@@ -536,13 +537,13 @@ elseif(CONTROL_STAND_DATA[7,number] == 0){
     BEAuto = 0    
 }
 
-if((LOCOMOTIVE_AIRBRAKE_DATA[2,number]<85 & !BHQ & MPH<1.5)){
+if((LOCOMOTIVE_AIRBRAKE_DATA[2,number]<(FeedPressure-1) & !BHQ & MPH<1)){
     Holding = 1
     BHQ = 1
     abRest(Trucks)
 }
 
-if((LOCOMOTIVE_AIRBRAKE_DATA[4,number]>10) & !BHQ & MPH<1.5){
+if((LOCOMOTIVE_AIRBRAKE_DATA[4,number]>5) & !BHQ & MPH<1){
     Holding = 1
     BHQ = 1
     abRest(Trucks)
@@ -556,7 +557,7 @@ if(HandBrake){
 
 local Overcome = (abs(TE) - BE)>0
 
-if(((LOCOMOTIVE_AIRBRAKE_DATA[2,number]>85 & LOCOMOTIVE_AIRBRAKE_DATA[4,number]<10 & !HandBrake & BHQ))){
+if(((LOCOMOTIVE_AIRBRAKE_DATA[2,number]>(FeedPressure-1) & LOCOMOTIVE_AIRBRAKE_DATA[4,number]<5 & !HandBrake & BHQ))){
     Holding = 0
     BHQ = 0
     abRelease()
@@ -588,14 +589,14 @@ if(FixNils){
     }
     
     Load = clamp(Current,Load-(15),Load+(LowSpeedCurve/(Dynamics ? 1 : 10)))
-    TE_EffectiveLoad = Load/(1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-90))/90))
+    TE_EffectiveLoad = Load/(1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-(FeedPressure)))/(FeedPressure)))
     TE_Effective = TE_EffectiveLoad
 }
 
 local FrictionCoefficient = getWeatherCondition()
 local InperfectionFactor = 1.5
 local SlipCoefficient = TE_Effective/WeightOnAxle*(TrainWeight/WeightOnAxle)
-local FrictionFactor = (1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-90))/90))
+local FrictionFactor = (1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-(FeedPressure)))/(FeedPressure)))
 SlippingFactor = ((SlipCoefficient/(FrictionFactor^2))/(1+((MPH/BaseSpeed)/10)))*(random()*InperfectionFactor)
 
 if(!MotorShort){
@@ -635,8 +636,8 @@ if(BHQ){
     TE = 0
 }
 
-BEF = sign(V)*(MPH>0.5)*abs(BE)
-BEAutoF = sign(V)*(MPH>0.5)*abs(BEAuto)
+BEF = abs(BE)#(MPH>0.5)*abs(BE)
+BEAutoF = abs(BEAuto)#(MPH>0.5)*abs(BEAuto)
 
 if(Dynamics == 0){
     TELocal = TE*sign(CONTROL_STAND_DATA[16,number])
@@ -647,12 +648,12 @@ elseif(Dynamics == 1){
 
 BEForce = BEF + BEAutoF
 
-if((TE!=0) | (BEForce!=0)){
-    Force = TELocal - BEForce
-}
-else{
-    Force = 0    
-}
+#if((TE!=0) | (BEForce!=0)){
+    Force = TELocal - (BEForce*sign(V))
+#}
+#else{
+#    Force = 0    
+#}
 
 W:applyForce(-E:up()*(Force/5))
 

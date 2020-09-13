@@ -40,6 +40,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Dynamic Grid Overheat
     * [ ] Sanders
   * [x] User Control
+  * [ ] Chat Commands
   * [x] I/O
     * [x] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2

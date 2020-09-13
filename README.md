@@ -32,7 +32,13 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Locomotive Brake res logic
   * [x] Physics System
     * [x] Playerbased Speed and Physics Calculations
+    * [x] MPH
+    * [x] KPH
     * [x] WheelSlip
+    * [ ] Traction Control
+    * [x] Traction Motor Overheat
+    * [x] Dynamic Grid Overheat
+    * [ ] Sanders
   * [x] User Control
   * [x] I/O
     * [x] MU Hose Functionality
@@ -48,6 +54,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] AAR 27 Pin Standard
     * [x] Air System MU
     * [x] MU2A
+    * [ ] MU Headlights
   * [x] Configs
   
 ## How it all works

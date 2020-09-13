@@ -1,15 +1,14 @@
 @name OpenControl/Locomotive-Westinghouse-Airbrakes
 @inputs Locomotive:entity BPAngleCockFRONT BPAngleCockREAR MU2A [AirMU_FrontIN AirMU_RearIN LOCOMOTIVE_PROCESSOR CONTROL_STAND_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA]:array
-@outputs [AirMU_FrontOUT AirMU_RearOUT LOCOMOTIVE_AIRBRAKE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Compressor AirSpit AirMU BP_Open
+@outputs [AirMU_FrontOUT AirMU_RearOUT LOCOMOTIVE_AIRBRAKE_DATA]:array MainReservoir EqualizingReservoir BrakePipe BrakeCylinder AutomaticAFM IndependentAFM Compressor AirSpit AirMU BP_Open IsLastLocomotive
 @persist [E O W]:entity [SmoothTable]:table
 @persist Compressor MainCharging MainCharged TopUpMainRes Interval Compressor_CFM MainReservoirVolume BrakePipingVolume LocomotiveBrakePipeLocalVolume CompressorTime PauseCOMP_EQing Equalized EqualizedHalfandHalf
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local IndNotch BrakePipeLocalCutin TrainLine
 @persist TotalBPVol BrakePipeLocalVol TrainlineEQ TLBP_Equal ERBP_Equal ERBP_EqualLOCKED BrakePipeLocal BrakePipe CompRefill BrakeLinePumpLoss MRCO EQCO TLCO TLDropToZero AirMU
 @persist COMPEngineOn AirSpit IsLead BrakePipeAnglecock BP_Open NumRes NominalFlowPHYS AutoPressureSet TELocal LastCarCount HoldatZero FeedPressure MainResFeedPressure MainResRechargePressure
-@persist BPAC_AirMU
+@persist BPAC_AirMU IsLastLocomotive BPAC_AirMU_Front BPAC_AirMU_Rear LocomotivePOS NextLocomotive
 @trigger none 
 @model
-
 
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
@@ -30,9 +29,9 @@ if(first()){
     NumRes = 2.5
     NominalFlowPHYS = 0.865
     
-    MainReservoir = 140
-    EqualizingReservoir = 90
-    BrakePipeLocal = 90
+    MainReservoir = 0
+    EqualizingReservoir = 0
+    BrakePipeLocal = 0
     BrakeCylinder = 65
     
     FeedPressure = CONFIGURATION_DATA[53,number]
@@ -116,6 +115,63 @@ if(BPAngleCockREAR == 0 & BPAngleCockFRONT == 0){
     BrakePipeAnglecock = 0
     BPAC_AirMU = 1
 }
+
+
+if(!IsLead){
+    if((AirMU_FrontIN[7,number] > 0) | (AirMU_RearIN[7,number] > 0)){
+        LocomotivePOS = (AirMU_FrontIN[7,number]-1)
+        LocomotivePOS = (AirMU_RearIN[7,number]-1)
+    }
+}
+else{
+    LocomotivePOS = 74
+}
+
+IsLastLocomotive = (!IsLead & !(AirMU_FrontIN[1,string] == "opencontrol" & AirMU_RearIN[1,string] == "opencontrol")) ? 1 : 0
+
+if(!IsLead){
+    if(IsLastLocomotive){
+        if(AirMU_FrontIN[7,number] > AirMU_RearIN[7,number]){
+            NextLocomotive = AirMU_FrontIN[7,number]
+            BPAC_AirMU_Front = BPAC_AirMU
+        }
+        else{
+            NextLocomotive = AirMU_RearIN[7,number]
+            BPAC_AirMU_Rear = BPAC_AirMU
+        }
+    }
+    else{
+        if(AirMU_FrontIN[7,number] > AirMU_RearIN[7,number]){
+            NextLocomotive = AirMU_FrontIN[7,number]
+            if(changed(AirMU_RearIN[6,number])){
+                BPAC_AirMU_Front = AirMU_RearIN[6,number]
+                BPAC_AirMU_Output = AirMU_RearIN[6,number]
+                BPAC_AirMU = AirMU_RearIN[6,number]
+            }
+        }
+        else{
+            NextLocomotive = AirMU_RearIN[7,number]
+            if(changed(AirMU_FrontIN[6,number])){
+                BPAC_AirMU_Rear = AirMU_FrontIN[6,number]
+                BPAC_AirMU_Output = AirMU_FrontIN[6,number]
+                BPAC_AirMU = AirMU_FrontIN[6,number]
+            }
+        }
+        
+    }
+}
+else{
+    if(AirMU_FrontIN[1,string] == "opencontrol"){
+        BPAC_AirMU_Front = AirMU_FrontIN[6,number]
+        BPAC_AirMU_Output = AirMU_FrontIN[6,number]
+        BPAC_AirMU = AirMU_FrontIN[6,number]
+    }
+    elseif(AirMU_RearIN[1,string] == "opencontrol"){
+        BPAC_AirMU_Rear = AirMU_RearIN[6,number]
+        BPAC_AirMU_Output = AirMU_RearIN[6,number]
+        BPAC_AirMU = AirMU_RearIN[6,number]
+    }
+}    
 
 
 CarCount = LOCOMOTIVE_PROCESSOR[1,number]
@@ -208,7 +264,7 @@ if(AirMU_FrontIN[1,string] == "opencontrol" | AirMU_RearIN[1,string] == "opencon
     elseif(CONTROL_STAND_DATA[28,number] == 1 & MU2A == 0){ #MU2A - Lead
         IsLead = 1
         IndependantMU = BrakeCylinder
-        PressureSetMU = CONTROL_STAND_DATA[3,number]
+        PressureSetMU = CONTROL_STAND_DATA[4,number]
         MainResMU = MainReservoir
         AirMU = 0
         AutoPressureSet = CONTROL_STAND_DATA[4,number]
@@ -218,15 +274,15 @@ else{
     if(CONTROL_STAND_DATA[28,number]){
         IsLead = 1
         IndependantMU = BrakeCylinder
-        PressureSetMU = CONTROL_STAND_DATA[3,number]
+        PressureSetMU = CONTROL_STAND_DATA[4,number]
         MainResMU = MainReservoir
         AirMU = 0
         AutoPressureSet = CONTROL_STAND_DATA[4,number]
     }
 }
 
-AirMU_FrontOUT = array("opencontrol",IndependantMU,PressureSetMU,MainResMU,IsLead)
-AirMU_RearOUT = array("opencontrol",IndependantMU,PressureSetMU,MainResMU,IsLead)
+AirMU_FrontOUT = array("opencontrol",IndependantMU,PressureSetMU,MainResMU,IsLead,BPAC_AirMU_Front,LocomotivePOS)
+AirMU_RearOUT = array("opencontrol",IndependantMU,PressureSetMU,MainResMU,IsLead,BPAC_AirMU_Rear,LocomotivePOS)
 
 if(COMPEngineOn){
     if(Compressor){ 
@@ -253,7 +309,6 @@ if(COMPEngineOn){
             elseif(round(MainReservoir) == round(EqualizingReservoir)){
                 local SplitRate = (CompressorTime/NumRes)
                 EqualizingReservoir = EqualizingReservoir
-                MainReservoir = MainReservoir
             }
         }
         
@@ -275,10 +330,6 @@ if(COMPEngineOn){
         }
     }
 
-    #[
-    CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-    DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control)
-    ]#
     if(HoldatZero == 0){
         if(BrakePipeAnglecock == 1){
             if(CarCount<2 & BPAC_AirMU){
@@ -357,9 +408,29 @@ if(COMPEngineOn){
                 elseif(round(BrakePipeLocal) > AutomaticPressureSet){
                     local FeedRate = (CompressorTime/NominalFlowPHYS)
                     BrakePipeLocal -= FeedRate
+                    if(Compressor){ 
+                        if(AirMU == 0){
+                            if(MainReservoir<MainResFeedPressure){
+                                MainReservoir += (CompressorTime/NumRes)
+                            }
+                            elseif(MainReservoir > MainResFeedPressure){
+                                MainReservoir = MainResFeedPressure    
+                            }
+                        }
+                    }
                 }
                 elseif(round(BrakePipeLocal) == AutomaticPressureSet){
                     BrakePipeLocal = AutomaticPressureSet
+                    if(Compressor){ 
+                        if(AirMU == 0){
+                            if(MainReservoir<MainResFeedPressure){
+                                MainReservoir += (CompressorTime/NumRes)
+                            }
+                            elseif(MainReservoir > MainResFeedPressure){
+                                MainReservoir = MainResFeedPressure    
+                            }
+                        }
+                    }
                 }
             }
         
@@ -419,23 +490,6 @@ if(changed(CarCount)&CarCount){
     LastCarCount = CarCount
 }
 
-#[
-if(round(MainReservoir)<MainResFeedPressure & !MainCharged){
-    Compressor = 1    
-}
-elseif(round(MainReservoir) == MainResFeedPressure & !MainCharged){
-    MainCharged = 1    
-}
-
-if(round(MainReservoir)<MainResRechargePressure & MainCharged){
-    Compressor = 1    
-}
-
-if(round(MainReservoir) >= MainResFeedPressure){
-    Compressor = 0    
-}
-]#
-
 if(round(MainReservoir)<MainResRechargePressure){
     Compressor = 1    
 }
@@ -490,8 +544,6 @@ BrakePipe = smooth((BrakePipeLocal),(15)+(CarCount*1),"brakepipe-smoothing",0)
 IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
 AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
 
-#LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train,V,E,O,W)
-
 if(COMPEngineOn){
     if(changed(Compressor)&Compressor){
         Locomotive:soundPlay("aircompressor",0,CONFIGURATION_DATA[12,string])
@@ -544,3 +596,6 @@ if(AirMU == 0){
 
 LOCOMOTIVE_AIRBRAKE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch,BrakePipeAnglecock,BrakePipeLocal,Compressor,BrakePipeAnglecock)
 
+if(last()){
+    soundPurge()
+}

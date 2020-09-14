@@ -47,7 +47,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
     * [x] Dynamic Grid Overheat
     * [x] Sanders
-    * [ ] Slugs & Cab Units (Unit Types) -- // UNTESTED //
+    * [ ] Slugs & Cab Units (Unit Types) -- // SEMI-UNTESTED //
       * [x] Locomotive
       * [x] Slug (No Prime Mover, has Traction Motors)
       * [x] Snail (No Traction Motors, has Prime Mover)
@@ -71,6 +71,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [ ] OverloadProtection
       * The locomotive will reduce power if thermal limits of the traction motors are exceeded.
     * [ ] Adhesion
+      * Really worth adding? Wheelslip does its own thing, :thinking_emoji:
     * [x] Custom Load Ramping Speed
       * Will be located in configs, the default should be 15. (see clamps in TM Calc)
     * [x] Low Speed Curve Enable/Disable

@@ -1,5 +1,5 @@
 @name OpenControl/engine-sound-processor
-@inputs Locomotive:entity Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 [CONTROL_STAND_DATA]:array 
+@inputs Locomotive:entity Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 [CONTROL_STAND_DATA CONFIGURATION_DATA]:array 
 @outputs [ENGINE_SOUND_DATA]:array Primed1 Primed2 PrimerSet1 PrimerSet2 Clag1 Clag2 On1 On2 EngineNotch1 EngineSpeed1
 @persist Startup_Mode Shutdown_Mode FuelSaverMode FuelSaverDelay NumThrottleNotches NumEngineNotches PrimerDuration MU_Master
 @persist [Startup_Hi Startup_Lo Shutdown_Hi Shutdown_Lo TransitionPath TransitionToLow TransitionToHigh Idle_Low]:string [Notches EngineBehavior UpDelays DownDelays UpOverrides DownOverrides]:array
@@ -11,13 +11,8 @@
 @persist RemoteMode ForcePrime1 ForcePrime2 ForceStart1 ForceStart2 SoundMultiplier HasPM HasTM SlugMode BatteryKnife GenField
 @trigger Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 EngineRun Throttle BatteryKnife GenField
 
-#E = entity()
-
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
-    
-    #CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-    #DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch)
     
     Startup_Hi = "gsgtrainsounds/emd645e3bv16/startup_high.wav" #Startup Sound to put the engine in High (Normal) Idle.
     Startup_Lo = "gsgtrainsounds/emd645e3bv16/startup_low.wav" #Startup Sound to put the engine in Low Idle.
@@ -33,8 +28,6 @@ if(first()){
     TransitionToLow = "gsgtrainsounds/emd645e3bv16/transitions/down/idle-idle_low.wav" #Transition sound for High to Low idle, if used.
     TransitionToHigh = "gsgtrainsounds/emd645e3bv16/transitions/up/0-1b.wav" #Transition sound for Low to High idle, if used.
     Idle_Low = "gsgtrainsounds/emd645e3bv16/idle_low.wav" #Sound for Low Idle, if used.
-    
-    NumEngineNotches = 8 #Number of Engine Notches, not counting idle.
     
     Notches = array(
         "gsgtrainsounds/emd645e3bv16/idle.wav", #Idle
@@ -83,96 +76,82 @@ if(first()){
         "gsgtrainsounds/emd645e3bv16/transitions/down/1-idle.wav"  #1-0
     )
     
-    StartupClagDelay = 2 #Time required to hold starter for engine to turn on successfully
-    StartupClagDuration = 1 #Duration for starter smoke
+    StartupClagDelay = CONFIGURATION_DATA[66,number]
+    StartupClagDuration = CONFIGURATION_DATA[67,number]
     
-    PrimeOn = "gsgtrainsounds/emd645e3bv16/primer_loop.wav"
-    PrimeOff = "gsgtrainsounds/emd645e3bv16/prime_end.wav"
+    PrimeOn = CONFIGURATION_DATA[64,string]
+    PrimeOff = CONFIGURATION_DATA[65,string]
     
-    PrimerDuration = randint(10,15)
-
-DPM = 0 #Dual Prime Movers. Set to 1 if your locomotive has two engines (Like a DDA40X, E unit, or GE 45 Tonner).
-HEP = 0 #Head-End Power. Set to 1 if your locomotive is equipped with integrated HEP (like an F40PH or P42DC).
-HEP_Subtract = 0 #The Amount of Horsepower to subtract when in HEP mode. GE locomotives use 200, EMD locomotives usually use 700.
-HEPTYPE = 0 #0 for 4-8 HEP (Traditional), 1 for 2-4 HEP (For Modern, High-Horsepower Passenger Units like the GE Genesis series).
-StarterMode = 0
-#0 - Manual Primer, Manual Start
-#1 - Latched Primer, Manual Start
-#2 - Fully Automatic Start
-
-UnitType = 0
-MU_Connected = 0
-
-HasPM = 1    
-IdleOverride = 0
-DPM_Delay = 0
-
-#Startup Init
-On1 = On2 = 0
-Primed1 = Primed2 = 0
-Priming1 = Priming2 = 0
-
-Starting1 = Starting2 = 0
-
-Clag1 = 0
-Clag2 = 0
-LowIdleActual1 = 1
-LowIdling2 = 0
-
-E = Locomotive
-RLCPT = E
-O = owner()
-W = E #E:isWeldedTo()
-H1 = holoCreate(1,W:boxCenterW())
-holoParent(1,W)
-holoAlpha(1,0)
-H2 = holoCreate(2,W:boxCenterW())
-holoParent(2,W)
-holoAlpha(2,0)
-
-#Engine Init
-Throttle = 0
-DynamicBrake = 0
-HumpMultiplier = 1
-TQ1 = 0
-TQ2 = 0
-ABQ1 = 0
-ABQ2 = 0
-EngineSpeed1 = EngineSpeed2 = 0
-EngineNotch1 = EngineNotch2 = 0
-LRQ1 = LRQ2 = 0
-RevQ = 0
-LowIdleWaiting1 = 0
-
-ForcePrime1 = 0
-ForcePrime2 = 0
-ForceStart1 = 0
-ForceStart2 = 0
-
-#Misc Init
-
-#0 - Locomotive
-#1 - Slug (No Prime Mover, has Traction Motors
-#2 - Snail (No Traction Motors, has Prime Mover
-#3 - Cab Car/Control Cab (No Traction Motors or Prime Mover)
-HasPM = (UnitType==0) | (UnitType==2)
-HasTM = (UnitType==0) | (UnitType==1)
-SlugMode = UnitType==1
-if(!HasPM){
-    DPM = 0
-    HEP = 0
-    #print("AAAA")
-}
-
-SoundMultiplier = soundDuration("gsgtrainsounds/misc/switch_rotating.wav")/0.645
-
-function number sdr(Soundpath:string){
-    #local Tick = round(1/tickInterval())
+    PrimerDuration = CONFIGURATION_DATA[68,number]
     
-    DR = floor(soundDuration(Soundpath)*100/SoundMultiplier)*10 - 20
-    #print(DR)
-    return DR
-}
+    NumEngineNotches = CONFIGURATION_DATA[43,number]
+    DPM = CONFIGURATION_DATA[59,number]
+    HEP = CONFIGURATION_DATA[60,number]
+    HEP_Subtract = CONFIGURATION_DATA[61,number]
+    HEPTYPE = CONFIGURATION_DATA[62,number]
+    StarterMode = CONFIGURATION_DATA[63,number]
+    
+    UnitType = CONFIGURATION_DATA[58,number]
+    MU_Connected = 0   
+    IdleOverride = 0
+    DPM_Delay = CONFIGURATION_DATA[68,number]
+    
+    On1 = On2 = 0
+    Primed1 = Primed2 = 0
+    Priming1 = Priming2 = 0
+    Starting1 = Starting2 = 0
+    Clag1 = 0
+    Clag2 = 0
+    LowIdleActual1 = 1
+    LowIdling2 = 0
+    
+    E = Locomotive
+    RLCPT = E
+    O = owner()
+    W = E
+    H1 = holoCreate(1,W:boxCenterW())
+    holoParent(1,W)
+    holoAlpha(1,0)
+    H2 = holoCreate(2,W:boxCenterW())
+    holoParent(2,W)
+    holoAlpha(2,0)
+    
+    Throttle = 0
+    DynamicBrake = 0
+    HumpMultiplier = 1
+    TQ1 = 0
+    TQ2 = 0
+    ABQ1 = 0
+    ABQ2 = 0
+    EngineSpeed1 = EngineSpeed2 = 0
+    EngineNotch1 = EngineNotch2 = 0
+    LRQ1 = LRQ2 = 0
+    RevQ = 0
+    LowIdleWaiting1 = 0
+    
+    ForcePrime1 = 0
+    ForcePrime2 = 0
+    ForceStart1 = 0
+    ForceStart2 = 0
+    BatteryKnife = 0
+
+    HasPM = (UnitType==0) | (UnitType==2)
+    HasTM = (UnitType==0) | (UnitType==1)
+    SlugMode = UnitType==1
+    if(!HasPM){
+        DPM = 0
+        HEP = 0
+    }
+    
+    SoundMultiplier = soundDuration("gsgtrainsounds/misc/switch_rotating.wav")/0.645
+    
+    function number sdr(Soundpath:string){
+        #local Tick = round(1/tickInterval())
+        
+        DR = floor(soundDuration(Soundpath)*100/SoundMultiplier)*10 - 20
+        #print(DR)
+        return DR
+    }
 
     function normal adc(MinVal, MaxVal, Resolution, Input){
         local Output = 0
@@ -684,6 +663,7 @@ if(clk("clk")){
     EngineRun = CONTROL_STAND_DATA[20,number]
     GenField = CONTROL_STAND_DATA[21,number]
     BatteryKnife = CONTROL_STAND_DATA[19,number]
+    BatteryKnife = 1
     Reverser = CONTROL_STAND_DATA[16,number]
     #[
     Prime1 = CONTROL_STAND_DATA[23,number]

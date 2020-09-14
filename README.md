@@ -44,34 +44,37 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * Automatic Power Reduction and Sand (Late)
       * Electronic Traction Control (Modern)
     * [x] Traction Motor Overheat
-      * [ ] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
+      * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
     * [x] Dynamic Grid Overheat
-    * [ ] Sanders
+    * [x] Sanders
     * [ ] Slugs & Cab Units (Unit Types)
       * Locomotive
       * Slug (No Prime Mover, has Traction Motors)
       * Snail (No Traction Motors, has Prime Mover)
       * Cab Car/Control Cab (No Traction Motors or Prime Mover)
+      * Need to add yet another MU system for Power to Slug units.
     * [ ] GeneratorTransition
-    * [ ] Transition Groups
-    * [ ] Transition Shunts
-    * [ ] Dynamic Modes
+      * Need to look into this first.
+    * [x] Transition Groups
+    * [x] Transition Shunts
+    * [x] Dynamic Modes
       * Switch between either no Dynamics
-      * [ ] Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
-      * [ ] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
+      * [x] Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
+      * [x] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
     * [ ] Blended Braking
       * Modern Passenger Thing, turns on dynamic brakes when air brake application is made.
     * [ ] Hend-End Power
-    * [ ] Dual Prime Mover
-    * [ ] Primer / Starter Modes
-      * [ ] Manual Primer, Manual Start
-      * [ ] Latched Primer, Manual Start
-      * [ ] Fully Automatic Start
+    * [x] Dual Prime Mover
+    * [x] Primer / Starter Modes
+      * [x] Manual Primer, Manual Start
+      * [x] Latched Primer, Manual Start
+      * [x] Fully Automatic Start
     * [ ] OverloadProtection
       * The locomotive will reduce power if thermal limits of the traction motors are exceeded.
     * [ ] Adhesion
-    * [ ] Custom Load Ramping Speed
+    * [x] Custom Load Ramping Speed
       * Will be located in configs, the default should be 15. (see clamps in TM Calc)
+    * [x] Low Speed Curve Enable/Disable
   * [x] User Control
   * [ ] Chat Commands
   * [ ] I/O
@@ -94,6 +97,19 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [ ] Engine Sound Config
       * Needs to be moved from the Engine Sound Chip to the Config Chip (low priority)
   
+  
+## What can be Multi-Parented
+
+Item | Can be Multi-Parented? |
+---|---|
+Config | ✔ | 
+Control Stand Controller | ✔ | 
+Diesel Electric Processor | ❌ | 
+Engine Sound Processor | ✔ | 
+Locomotive Airbrakes Processor | ✔ | 
+Sound Processor | ✔ | 
+
+
 ## How it all works
 
 **NOTE:** This explanation is *very* simplified.

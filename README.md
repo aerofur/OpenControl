@@ -57,7 +57,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Transition Groups
     * [x] Transition Shunts
     * [x] Dynamic Modes
-      * Switch between either no Dynamics
+      * [x] No Dynamics
       * [x] Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
       * [x] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
     * [ ] Blended Braking

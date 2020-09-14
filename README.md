@@ -37,12 +37,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] WheelSlip
       * [x] Reduce Current when WheelSlip occurs
       * [x] Map Weather Condition FETCH
-        * Not yet to be working (Needs lua?). Would set the Friction Coefficient depending on the rail conditions. Is set to 0.5 by default, if they were wet it would be 0.3. Applying sand would counteract this, and set it back 0.5.
+        * Not yet to be working (Needs lua?). Would set the Friction Coefficient depending on the rail conditions. Is set to 0.5 by default, if they were wet it would be 0.3. Applying sand would counteract this, and set it to 1.0.
     * [ ] Traction Control
-      * No Traction Control (Early)
-      * Automatic Power Reduction (Mid)
-      * Automatic Power Reduction and Sand (Late)
-      * Electronic Traction Control (Modern)
+      * [x] No Traction Control (Early)
+      * [ ] Automatic Power Reduction (Mid)
+      * [ ] Automatic Power Reduction and Sand (Late)
+      * [ ] Electronic Traction Control (Modern)
     * [x] Traction Motor Overheat
       * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
     * [x] Dynamic Grid Overheat

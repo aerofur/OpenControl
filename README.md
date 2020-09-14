@@ -47,7 +47,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
     * [x] Dynamic Grid Overheat
     * [x] Sanders
-    * [ ] Slugs & Cab Units (Unit Types) -- // SEMI-UNTESTED //
+    * [x] Slugs & Cab Units (Unit Types)
       * [x] Locomotive
       * [x] Slug (No Prime Mover, has Traction Motors)
       * [x] Snail (No Traction Motors, has Prime Mover)

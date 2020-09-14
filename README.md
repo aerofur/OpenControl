@@ -30,11 +30,55 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Control Air
     * [x] MainRes "jump" on Bail
     * [x] Locomotive Brake res logic
-  * [x] Physics System
+  * [ ] Physics System / Electrical
     * [x] Playerbased Speed and Physics Calculations
+    * [x] MPH
+    * [x] KPH
     * [x] WheelSlip
+      * [x] Reduce Current when WheelSlip occurs
+      * [x] Map Weather Condition FETCH
+        * Not yet to be working (Needs lua?). Would set the Friction Coefficient depending on the rail conditions. Is set to 0.5 by default, if they were wet it would be 0.3. Applying sand would counteract this, and set it back 0.5.
+    * [ ] Traction Control
+      * No Traction Control (Early)
+      * Automatic Power Reduction (Mid)
+      * Automatic Power Reduction and Sand (Late)
+      * Electronic Traction Control (Modern)
+    * [x] Traction Motor Overheat
+      * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
+    * [x] Dynamic Grid Overheat
+    * [x] Sanders
+    * [ ] Slugs & Cab Units (Unit Types) -- // SEMI-UNTESTED //
+      * [x] Locomotive
+      * [x] Slug (No Prime Mover, has Traction Motors)
+      * [x] Snail (No Traction Motors, has Prime Mover)
+      * [x] Cab Car/Control Cab (No Traction Motors or Prime Mover)
+    * [ ] Generator Transition
+      * Need to look into this first.
+    * [x] Transition Groups
+    * [x] Transition Shunts
+    * [x] Dynamic Modes
+      * Switch between either no Dynamics
+      * [x] Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
+      * [x] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
+    * [ ] Blended Braking
+      * Modern Passenger Thing, turns on dynamic brakes when air brake application is made.
+    * [ ] Hend-End Power
+    * [x] Dual Prime Mover
+    * [x] Primer / Starter Modes
+      * [x] Manual Primer, Manual Start
+      * [x] Latched Primer, Manual Start
+      * [x] Fully Automatic Start
+    * [ ] OverloadProtection
+      * The locomotive will reduce power if thermal limits of the traction motors are exceeded.
+    * [ ] Adhesion
+      * Really worth adding? Wheelslip does its own thing, :thinking_emoji:
+    * [x] Custom Load Ramping Speed
+      * Will be located in configs, the default should be 15. (see clamps in TM Calc)
+    * [x] Low Speed Curve Enable/Disable
+    * [ ] Engine Sound Pitch Rise when in MU (Assign in the engine sound control chip)
   * [x] User Control
-  * [x] I/O
+  * [ ] Chat Commands
+  * [ ] I/O
     * [x] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2
     * [x] Handbrake
@@ -42,14 +86,32 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Locomotive Fan E2
       * Adds working fans to the locomotive with sounds. This may be required to have on the locomotive for sounds, otherwise no dyno / fan sounds, etc.
     * [ ] Outputs for External E2s
-  * [x] Control Stand
+  * [ ] Control Stand
     * [x] 26L Brake Control Logic
-  * [x] Multiple Units
+    * [ ] Manual Selector
+  * [ ] Multiple Units
     * [x] AAR 27 Pin Standard
     * [x] Air System MU
     * [x] MU2A
-  * [x] Configs
+    * [ ] MU Headlights
+    * [x] MU Sanding
+  * [ ] Configs
+    * [ ] Engine Sound Config
+      * Needs to be moved from the Engine Sound Chip to the Config Chip (low priority)
   
+  
+## What can be Multi-Parented
+
+Item | Can be Multi-Parented? |
+---|---|
+Config | ✔ | 
+Control Stand Controller | ✔ | 
+Diesel Electric Processor | ❌ | 
+Engine Sound Processor | ✔ | 
+Locomotive Airbrakes Processor | ✔ | 
+Sound Processor | ✔ | 
+
+
 ## How it all works
 
 **NOTE:** This explanation is *very* simplified.

@@ -47,13 +47,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
     * [x] Dynamic Grid Overheat
     * [x] Sanders
-    * [ ] Slugs & Cab Units (Unit Types)
-      * Locomotive
-      * Slug (No Prime Mover, has Traction Motors)
-      * Snail (No Traction Motors, has Prime Mover)
-      * Cab Car/Control Cab (No Traction Motors or Prime Mover)
-      * Need to add yet another MU system for Power to Slug units.
-    * [ ] GeneratorTransition
+    * [ ] Slugs & Cab Units (Unit Types) -- // UNTESTED //
+      * [x] Locomotive
+      * [x] Slug (No Prime Mover, has Traction Motors)
+      * [x] Snail (No Traction Motors, has Prime Mover)
+      * [x] Cab Car/Control Cab (No Traction Motors or Prime Mover)
+    * [ ] Generator Transition
       * Need to look into this first.
     * [x] Transition Groups
     * [x] Transition Shunts
@@ -75,6 +74,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Custom Load Ramping Speed
       * Will be located in configs, the default should be 15. (see clamps in TM Calc)
     * [x] Low Speed Curve Enable/Disable
+    * [ ] Engine Sound Pitch Rise when in MU (Assign in the engine sound control chip)
   * [x] User Control
   * [ ] Chat Commands
   * [ ] I/O
@@ -93,6 +93,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Air System MU
     * [x] MU2A
     * [ ] MU Headlights
+    * [x] MU Sanding
   * [ ] Configs
     * [ ] Engine Sound Config
       * Needs to be moved from the Engine Sound Chip to the Config Chip (low priority)

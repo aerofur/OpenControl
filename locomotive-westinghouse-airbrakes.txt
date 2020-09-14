@@ -6,7 +6,7 @@
 @persist Discharging_EQ Discharging_BC EqualizedBC IndAFM IndAFMCapture IndAFMCapture2 AutoAFM AutoAFMCapture AutoAFMCapture2 IndependentAFM_Local AutomaticAFM_Local IndNotch BrakePipeLocalCutin TrainLine
 @persist TotalBPVol BrakePipeLocalVol TrainlineEQ TLBP_Equal ERBP_Equal ERBP_EqualLOCKED BrakePipeLocal BrakePipe CompRefill BrakeLinePumpLoss MRCO EQCO TLCO TLDropToZero AirMU
 @persist COMPEngineOn AirSpit IsLead BrakePipeAnglecock BP_Open NumRes NominalFlowPHYS AutoPressureSet TELocal LastCarCount HoldatZero FeedPressure MainResFeedPressure MainResRechargePressure
-@persist BPAC_AirMU IsLastLocomotive BPAC_AirMU_Front BPAC_AirMU_Rear LocomotivePOS NextLocomotive
+@persist BPAC_AirMU IsLastLocomotive BPAC_AirMU_Front BPAC_AirMU_Rear LocomotivePOS NextLocomotive HasPM HasTM SlugMode
 @trigger none 
 @model
 
@@ -60,6 +60,16 @@ if(first()){
     BPAC_AirMU_Local = 0
     BPAC_AirMU = 0
     BPAC_AirMU_CameFromMU = 0
+    
+    UnitType = CONFIGURATION_DATA[58,number]
+    
+    HasPM = (UnitType==0) | (UnitType==2)
+    HasTM = (UnitType==0) | (UnitType==1)
+    SlugMode = UnitType==1
+    if(!HasPM){
+        HEP = 0
+        DPM = 0
+    }
 
     function number smooth(Var,SmoothAmount,ID:string,DefaultVal){
         if(!SmoothTable:exists(ID)){
@@ -176,17 +186,27 @@ else{
 
 CarCount = LOCOMOTIVE_PROCESSOR[1,number]
 
-if(changed((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 1)&(ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 1){
-    timer("engst_comp",10000)    
+if(HasPM & IsLead){
+    if(changed((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 1)&(ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 1){
+        timer("engst_comp",10000)    
+    }
+    
+    if(CONTROL_STAND_DATA[28,number] == 1 & IsLead == 1){
+        if(clk("engst_comp")){
+            COMPEngineOn = 1    
+            stoptimer("engst_comp")
+        }
+    }
+    else{
+        stoptimer("engst_comp")
+    }
+    
+    if((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 0){
+        COMPEngineOn = 0    
+    }
 }
-
-if(clk("engst_comp")){
-    COMPEngineOn = 1    
-    stoptimer("engst_comp")
-}
-
-if((ENGINE_SOUND_DATA[7,number] | ENGINE_SOUND_DATA[8,number]) == 0){
-    COMPEngineOn = 0    
+elseif(!HasPM & IsLead){
+    COMPEngineOn = 1
 }
 
 
@@ -544,17 +564,19 @@ BrakePipe = smooth((BrakePipeLocal),(15)+(CarCount*1),"brakepipe-smoothing",0)
 IndependentAFM = smooth((IndependentAFM_Local*2),5,"IndAFMSmoothing",0)
 AutomaticAFM = smooth((AutomaticAFM_Local*15),10,"AutoAFMSmoothing",0)
 
-if(COMPEngineOn){
-    if(changed(Compressor)&Compressor){
+if(HasPM){
+    if(changed((Compressor | CONTROL_STAND_DATA[27,number]))&(Compressor | CONTROL_STAND_DATA[27,number])){
         Locomotive:soundPlay("aircompressor",0,CONFIGURATION_DATA[12,string])
     }
-    if(changed(!Compressor)&!Compressor){
+    if(changed(!Compressor & !CONTROL_STAND_DATA[27,number])&!Compressor & !CONTROL_STAND_DATA[27,number]){
         Locomotive:soundPlay("aircompressor",0,CONFIGURATION_DATA[13,string])
     }
 }
-elseif(changed(COMPEngineOn)&!COMPEngineOn){
+
+if(changed(COMPEngineOn)&!COMPEngineOn){
     Locomotive:soundPlay("aircompressor",0,CONFIGURATION_DATA[13,string])    
     soundStop("aircompressor",1)
+    Compressor = 0 
 }
 
 if(AirMU == 0){

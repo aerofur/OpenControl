@@ -1,7 +1,9 @@
 @name OpenControl/controlstand-aarlogic
 @inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout GroundRelayReset UsingRearSeat InsertReverser Horn Sand
 @inputs [MU_Front_In MU_Rear_In LOCOMOTIVE_AIRBRAKE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA LOCOMOTIVE_PROCESSOR]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
-@outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table IsLead
+@outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table IsLead ConsistMotors DBWarning InServiceZone BrakeNotch AutomaticPressureSet Suppression Emergency
+@outputs Independent_Bail ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake
+@outputs SelectorUp SelectorDown HandleOff EmergencyBrake DynamicNotch DynamicsSetup DynamicsPowerZone MUCompressor SelectorNotch LocomotivePOS HasPM HasTM SlugMode
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string ThrottleA ThrottleB ThrottleC ThrottleD 
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
@@ -34,7 +36,8 @@ if(first()){
     DynamicsPowerZoneLocal = 0
     DynamicUnlockLocal = 0
     
-    NumberOfNotches = 8
+    NumberOfNotches = CONFIGURATION_DATA[43,number]
+    ConsistMotors = 0
     
     HornPullcord = 0
     
@@ -222,21 +225,25 @@ if(!IsLead){
     if(SlugMode){
         if(MU_Front_In[13,number] > MU_Rear_In[13,number]){
             local LastLocoMotors = MU_Rear_In[18,number]
-            ConsistMotors = LastLocoMotors+Motors
+            ConsistMotors = HasTM ? (LastLocoMotors+Motors) : LastLocoMotors
         }
         else{
             local LastLocoMotors = MU_Front_In[18,number]
-            ConsistMotors = LastLocoMotors+Motors        
+            ConsistMotors = HasTM ? (LastLocoMotors+Motors) : LastLocoMotors       
         }
     }
     else{
         if(MU_Front_In[13,number] > MU_Rear_In[13,number]){
-            local LastLocoMotors = MU_Rear_In[18,number]
-            ConsistMotors = LastLocoMotors
+            if(changed(MU_Rear_In[18,number])){
+                local LastLocoMotors = MU_Rear_In[18,number]
+                ConsistMotors = HasTM ? (LastLocoMotors+Motors) : LastLocoMotors
+            }
         }
         else{
-            local LastLocoMotors = MU_Front_In[18,number]
-            ConsistMotors = LastLocoMotors        
+            if(changed(MU_Front_In[18,number])){
+                local LastLocoMotors = MU_Front_In[18,number]
+                ConsistMotors = HasTM ? (LastLocoMotors+Motors) : LastLocoMotors    
+            }    
         }
     }
     
@@ -261,12 +268,35 @@ if(!IsLead){
         }
     }
 }
+else{
+    local Motors = LOCOMOTIVE_PROCESSOR[18,number]
+    local Generator = LOCOMOTIVE_PROCESSOR[19,number]
+    
+    if(HasPM & !HasTM){
+        GeneratorMU = Generator
+    }
+    else{
+        if(MU_Front_In[13,number] > MU_Rear_In[13,number]){
+            GeneratorMU = MU_Rear_In[19,number]
+        }
+        else{
+            GeneratorMU = MU_Front_In[19,number]      
+        }
+    }
+    
+    if(changed(MU_Front_In[18,number])){
+        ConsistMotors = MU_Front_In[18,number]
+    }
+    
+    if(changed(MU_Rear_In[18,number])){
+        ConsistMotors = MU_Rear_In[18,number]
+    }
+}
 
-
-MU_Front_Out = array(0,LOCOMOTIVE_PROCESSOR[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
+MU_Front_Out = array("opencontrol",LOCOMOTIVE_PROCESSOR[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
 0,0,ThrottleB,LocomotivePOS,0,ThrottleA,EngineRunLocal,DynamicsSetup,ConsistMotors,GeneratorMU,DBWarning,DynamicNotchLocal,LOCOMOTIVE_AIRBRAKE_DATA[10,number],Sand,DynamicsPowerZone,0,GroundRelayResetLocal,IsLead)
 
-MU_Rear_Out = array(0,LOCOMOTIVE_PROCESSOR[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
+MU_Rear_Out = array("opencontrol",LOCOMOTIVE_PROCESSOR[15,number],ThrottleD,0,0,GenFieldLocal,ThrottleC,MUReverserFW,MUReverserBW,
 0,0,ThrottleB,LocomotivePOS,0,ThrottleA,EngineRunLocal,DynamicsSetup,ConsistMotors,GeneratorMU,DBWarning,DynamicNotchLocal,LOCOMOTIVE_AIRBRAKE_DATA[10,number],Sand,DynamicsPowerZone,0,GroundRelayResetLocal,IsLead)
 
 

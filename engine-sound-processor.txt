@@ -133,7 +133,6 @@ if(first()){
     ForcePrime2 = 0
     ForceStart1 = 0
     ForceStart2 = 0
-    BatteryKnife = 0
 
     HasPM = (UnitType==0) | (UnitType==2)
     HasTM = (UnitType==0) | (UnitType==1)
@@ -663,7 +662,6 @@ if(clk("clk")){
     EngineRun = CONTROL_STAND_DATA[20,number]
     GenField = CONTROL_STAND_DATA[21,number]
     BatteryKnife = CONTROL_STAND_DATA[19,number]
-    BatteryKnife = 1
     Reverser = CONTROL_STAND_DATA[16,number]
     #[
     Prime1 = CONTROL_STAND_DATA[23,number]

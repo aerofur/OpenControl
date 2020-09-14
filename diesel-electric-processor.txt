@@ -1,7 +1,7 @@
 @name OpenControl/Diesel-Electric-Processor
 @inputs Locomotive:entity HandBrake [LOCOMOTIVE_AIRBRAKE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA Trucks SpanBolsters]:array
 @outputs [LOCOMOTIVE_PROCESSOR]:array
-@outputs Load MPH KPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount MotorTemp DynamicTemp TrainWeight WheelSlip Sanding
+@outputs Load MPH KPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount MotorTemp DynamicTemp TrainWeight WheelSlip Sanding CurrentBO RampedMotorVoltage
 @persist [E O W]:entity [SmoothTable]:table LastProps:array CEMF R MainGeneratorVoltage MaxGeneratorVoltage MotorVoltage CircuitType CurrentBO Current DBCurrent Load
 @persist TE V BHQ Braking_Train Braking_Loco BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux CarCount BEVLB TrainWeight
 @persist DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay DBArking TMArking FixNils RampedMotorVoltage EngineRPMCal DynoHPINCR FBWD FFWD
@@ -48,6 +48,7 @@ if(first()){
     CEMF = 0
     MotorVoltage = 0
     RampedMotorVoltage = 0
+    FieldShunt = 1
     
     BrakeMul = (775*2)
     MaxTrainBrakeForce = 0
@@ -231,6 +232,10 @@ if(HasSelector){
         FieldShunt = 1
     }
 }
+else{
+    CircuitType = 4
+    FieldShunt = 1
+}
 
 if(HasPM){
     if(CONTROL_STAND_DATA[24,number] == 1){
@@ -276,7 +281,6 @@ if(HasTM){
                                 local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
                                 CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
                                 R = RampedMotorVoltage/CurrentNR
-                                
                                 
                                 if(!MotorShort & !GroundRelay){
                                     CurrentBO = (CurrentNR/R)*FieldShunt
@@ -616,8 +620,8 @@ if(clk("fixnil")){
 }
 
 if(FixNils){
-    local Curve = CONFIGURATION_DATA[78,number]
-    local LowSpeedCurveEnable = CONFIGURATION_DATA[79,number]
+    local Curve = CONFIGURATION_DATA[79,number]
+    local LowSpeedCurveEnable = CONFIGURATION_DATA[78,number]
     
     if(LowSpeedCurveEnable == 1){
         if(Dynamics == 0){

@@ -39,6 +39,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Traction Motor Overheat
     * [x] Dynamic Grid Overheat
     * [ ] Sanders
+    * [ ] Slugs & Cab Units
   * [x] User Control
   * [ ] Chat Commands
   * [x] I/O

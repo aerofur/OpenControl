@@ -60,9 +60,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] No Dynamics
       * [x] Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
       * [x] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
-    * [ ] Blended Braking
+    * [x] Blended Braking
       * Modern Passenger Thing, turns on dynamic brakes when air brake application is made.
     * [x] Hend-End Power
+      * [x] HEP Up Input
+      * [x] HEP Down Input
+      * [x] Remove horsepower if HEP active (can be set in the config)
     * [x] Dual Prime Mover
     * [x] Primer / Starter Modes
       * [x] Manual Primer, Manual Start

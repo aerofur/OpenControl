@@ -62,7 +62,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
     * [ ] Blended Braking
       * Modern Passenger Thing, turns on dynamic brakes when air brake application is made.
-    * [ ] Hend-End Power
+    * [x] Hend-End Power
     * [x] Dual Prime Mover
     * [x] Primer / Starter Modes
       * [x] Manual Primer, Manual Start
@@ -70,8 +70,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] Fully Automatic Start
     * [ ] OverloadProtection
       * The locomotive will reduce power if thermal limits of the traction motors are exceeded.
-    * [ ] Adhesion
-      * Really worth adding? Wheelslip does its own thing, :thinking_emoji:
+    * [x] Adhesion
     * [x] Custom Load Ramping Speed
       * Will be located in configs, the default should be 15. (see clamps in TM Calc)
     * [x] Low Speed Curve Enable/Disable
@@ -82,6 +81,19 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * Not very keen on doing this.. (Would anyone use it? If its not used much; no point in adding it, wasted cpu time..?) If someone else would like to do it feel free to make a Pull Request, or [Contact me](https://www.titusstudios.net/contact)!
   * [x] User Control
   * [ ] Chat Commands
+    * [ ] Autostarting
+      * [ ] Single PM
+      * [ ] DPM
+    * [ ] Shutdown
+      * [ ] Single PM
+      * [ ] DPM
+    * [ ] Automatic Brake
+    * [ ] Locomotive Brake
+    * [ ] Notch
+    * [ ] Dynamics
+      * [ ] Dynamic Setup
+      * [ ] Dynamics Powerzone (if un-notched dynamics)
+    * [ ] Control individual units by their Roadnumber
   * [ ] I/O
     * [x] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2

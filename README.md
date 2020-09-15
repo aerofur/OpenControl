@@ -76,6 +76,10 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * Will be located in configs, the default should be 15. (see clamps in TM Calc)
     * [x] Low Speed Curve Enable/Disable
     * [ ] Engine Sound Pitch Rise when in MU (Assign in the engine sound control chip)
+    * [ ] Cruise Control
+     * [ ] Dynamic Cruise Control
+     * [ ] Normal Cruise Control
+     * Not very keen on doing this.. (Would anyone use it? If its not used much; no point in adding it, wasted cpu time..?) If someone else would like to do it feel free to make a Pull Request, or [Contact me](https://www.titusstudios.net/contact)!
   * [x] User Control
   * [ ] Chat Commands
   * [ ] I/O

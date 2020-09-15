@@ -115,6 +115,7 @@ Engine Sound Processor | ✔ |
 Locomotive Airbrakes Processor | ✔ | 
 Sound Processor | ✔ | 
 
+> NOTE: When installing, remember to rename the folder from "OpenControl-master" or whatever it is to just "OpenControl"
 
 ## How it all works
 

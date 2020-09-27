@@ -11,7 +11,7 @@ The scope of the OpenControl Project is to build a robust, light-weight and life
 ## To-Do List
 This is a list of what we have to complete, fix, or build. *(These may be out of date)*
 
-  * [x] Air Braking System
+  * [ ] Air Braking System
     * [x] Compressor
     * [x] Compressor Logic
     * [x] Main Reservoir
@@ -30,6 +30,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Control Air
     * [x] MainRes "jump" on Bail
     * [x] Locomotive Brake res logic
+    * [ ] Air Compressor Pitch up (runs on engine RPM)
+      * Base this off the Engine RPM calulations in the Electrical chip (send the engine RPM through the data array).
+    * [x] Emergency Braking
+    * [x] BP and Trainline "speeds" are now based on how many cars there are. 
+      * The more the slower it takes to reach the Feed Pressure.
+      * Also means that Emrg Braking takes longer
   * [ ] Physics System / Electrical
     * [x] Playerbased Speed and Physics Calculations
     * [x] MPH
@@ -107,16 +113,16 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [ ] Outputs for External E2s
   * [ ] Control Stand
     * [x] 26L Brake Control Logic
-    * [ ] Manual Selector
+    * [x] Manual Selector
+    * [x] Emrg Hotkey
+      * Press a key to activate the Emergency Brake, so you dont need to go through the whole braking process
   * [ ] Multiple Units
     * [x] AAR 27 Pin Standard
     * [x] Air System MU
     * [x] MU2A
     * [ ] MU Headlights
     * [x] MU Sanding
-  * [ ] Configs
-    * [ ] Engine Sound Config
-      * Needs to be moved from the Engine Sound Chip to the Config Chip (low priority)
+  * [x] Configs
   
   
 ## What can be Multi-Parented

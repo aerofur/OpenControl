@@ -88,6 +88,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [ ] Dynamic Cruise Control
       * [ ] Normal Cruise Control
       * Not very keen on doing this.. (Would anyone use it? If its not used much; no point in adding it, wasted cpu time..?) If someone else would like to do it feel free to make a Pull Request, or [Contact me](https://www.titusstudios.net/contact)!
+    * [ ] Add Power to Weight Ratio Offset
+      * This will be set in the config, it can be set from 0 to anything you like.
+      * It will change how the electrical calculations calculate the tration motor amperates, and their respective "rates". Every Locomotive is different so some have a little more power, some have a little less.. This depends on weight, power, generators, cables, wear, etc.
+    * [ ] Change Engine Pitch slightly depending on load
+      * Cool Idea, could be cool, will test it and see how it turns out.
+      * This happens in real life, especially in wheel slip conditions.
   * [x] User Control
   * [ ] Chat Commands
     * [ ] Autostarting

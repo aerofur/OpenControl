@@ -11,7 +11,7 @@ The scope of the OpenControl Project is to build a robust, light-weight and life
 ## To-Do List
 This is a list of what we have to complete, fix, or build. *(These may be out of date)*
 
-  * [ ] Air Braking System
+  * [x] Air Braking System
     * [x] Compressor
     * [x] Compressor Logic
     * [x] Main Reservoir
@@ -30,7 +30,7 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Control Air
     * [x] MainRes "jump" on Bail
     * [x] Locomotive Brake res logic
-    * [ ] Air Compressor Pitch up (runs on engine RPM)
+    * [x] Air Compressor Pitch up (runs on engine RPM)
       * Base this off the Engine RPM calulations in the Electrical chip (send the engine RPM through the data array).
     * [x] Emergency Braking
     * [x] BP and Trainline "speeds" are now based on how many cars there are. 
@@ -109,15 +109,15 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [ ] Dynamic Setup
       * [ ] Dynamics Powerzone (if un-notched dynamics)
     * [ ] Control individual units by their Roadnumber
-  * [ ] I/O
+  * [x] I/O
     * [x] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2
     * [x] Handbrake
       * Make handbrake e2 that uses `eyeTrace()`, meaning you dont need to use buttons. (E to apply, Shift+E to release)
     * [x] Locomotive Fan E2
       * Adds working fans to the locomotive with sounds. This may be required to have on the locomotive for sounds, otherwise no dyno / fan sounds, etc.
-    * [ ] Outputs for External E2s
-  * [ ] Control Stand
+    * [x] Outputs for External E2s
+  * [x] Control Stand
     * [x] 26L Brake Control Logic
     * [x] Manual Selector
     * [x] Emrg Hotkey

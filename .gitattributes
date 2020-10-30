@@ -1,3 +1,2 @@
 # Using a `.gitattributes` file, with GitHubs Linguist, which reclassifies `.txt` files as CSharp:
 *.txt linguist-language=lua
-*icon_x.vmt linguist-language=batchfile

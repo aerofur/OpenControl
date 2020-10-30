@@ -34,12 +34,12 @@ if(first()){
     
     #Air Compressor
     Compressor_CFM = 254 
-    MainReservoirVolume = 33.8
+    MainReservoirVolume = 28.4
     FeedPressure = 90 #Max Pressure for the BP/EQ
     MainReservoirPressure = 140 #Max Pressure for the MR
     MainReservoirRechragePressure = 130 #Min Pressure for the MR (This is the pressure that once it drops down it will rechrage from, ex, <130 = recharge to 140.)
-    CompressorStart = "opencontrol/compressors/wbo/wbo6_loop.wav"
-    CompressorShutdown = "opencontrol/compressors/wbo/wbo6_end.wav"
+    CompressorStart = "opencontrol/compressors/wbo/wbo9_loop.wav"
+    CompressorShutdown = "opencontrol/compressors/wbo/wbo2_end.wav"
 
     #Automatic Brake Type
     AutomaticBrakeType = 0
@@ -48,10 +48,10 @@ if(first()){
     #2 = Westinghouse No. 6
     
     #Automatic Air Brake
-    AutomaticApply = "opencontrol/airbrakes/26c/apply.wav"
-    AutomaticRelease = "opencontrol/airbrakes/26c/release.wav"
-    AutomaticEmergency = "opencontrol/airbrakes/26c/emergency_apply.wav"
-    AutomaticEmergencyRelease = "opencontrol/airbrakes/26c/emergency_release.wav"
+    AutomaticApply = ""
+    AutomaticRelease = ""
+    AutomaticEmergency = "opencontrol/airbrakes/26l/emergency_apply.wav"
+    AutomaticEmergencyRelease = "opencontrol/airbrakes/26l/emergency_release.wav"
     
     #Independent Brake Type
     IndependentBrakeType = 0
@@ -59,17 +59,17 @@ if(first()){
     #1 = Westinghouse S40F
 
     #Independent Air Brake
-    IndependentApply = "opencontrol/airbrakes/sa26/apply.wav"
+    IndependentApply = ""
     IndependentRelease = "opencontrol/airbrakes/sa26/release.wav"
     IndependentBailOn = "opencontrol/airbrakes/sa26/bail_off2.wav"
-    IndependentBailOff = "opencontrol/airbrakes/sa26/bail_on2.wav"
+    IndependentBailOff = ""
 
     # --// Locomotive Settings //--
     # NOTE: For engine sounds, they are configured in the Engine Sound Processor.
     
-    Prime = "gsgtrainsounds/emd645e3bv16/primer_loop.wav"
-    PrimeEnd = "gsgtrainsounds/emd645e3bv16/prime_end.wav"
-    PrimerDuration = randint(10,15)
+    Prime = "gsgtrainsounds/emd645f3bv16/prime_loop.wav"
+    PrimeEnd = "gsgtrainsounds/emd645f3bv16/prime_end.wav"
+    PrimerDuration = randint(2,8)
 
     StartupClagDelay = 2 #Time required to hold starter for engine to turn on successfully
     StartupClagDuration = 1 #Duration for starter smoke
@@ -85,6 +85,8 @@ if(first()){
     RollSoundJointed = "gsgtrainsounds/misc/wheels_jointed.wav"
     WheelSlipLoop = "gsgtrainsounds/wheels/wheelslip_loop.wav"
     WheelSlipEnd = "gsgtrainsounds/wheels/wheelslip_end.wav"
+    SandOn = "opencontrol/sanders/sw8_sander_loop.wav"
+    SandOff = "opencontrol/sanders/sw8_sander_end.wav"
 
     AlarmBellStart = "gsgtrainsounds/misc/alarmbell_loop.wav"
     AlarmBellEnd = "gsgtrainsounds/misc/alarmbell_end.wav"
@@ -94,19 +96,31 @@ if(first()){
     #1 = Slug (No Prime Mover, has Traction Motors)
     #2 = Snail (No Traction Motors, has Prime Mover)
     #3 = Cab Car/Control Cab (No Traction Motors or Prime Mover)
-    MaxGeneratorCurrent = 6000
+    MaxGeneratorCurrent = 3000
     Motors = 6 #How many Traction Motors do you have?
     Axles = 6 #How many Axles do you have?
 
     TransitionGroups = array(2, 2, 1, 1) #The number of motors in series for each transition notch. Note that this number must divide into the number of motors evenly!
-    TransitionShunts = array(1, 0.75, 1, 0.75) #The ratio of current going through the field windings for each transition notch, as a fraction of the total load current.
+    TransitionShunts = array(1, 0.93, 0.86, 0.72) #The ratio of current going through the field windings for each transition notch, as a fraction of the total load current.
+    
+    # NOTE: OpenControl runs on "4 Position" Transition Locomotives. If your TransitionGroups or TransitionShunts have more than 4 values they WILL NOT be used. (As of Oct 2020)
+    
+    SelectorLever = 1 #Does it have a Selector Lever? See Below...
+    TransitionMode = 0 #Transition Modes
+    #0 = Manaul (The user selects what Transition they would like to be in. Seen in most Older Locomotives)
+    #1 = Automatic with Selector Lever (Early Automatic Transition. Either "OFF", "ON" or "BRAKING" positons)
+    #2 = Fully Automatic Transition (Late Automatic Transition. Seen in most Dash 2 EMDs and alike. Pretty much any Locomotive that is semi-modern)
+    
     LoadRampSpeed = 15 #How fast the engine loads when increasing power. 10 is sluggish, 30 is quick. // You should leave this at 15. //
     LowSpeedRamp = 1 #This enables if you want the amps to go up very slowly in Notch 1 at low speed, this is to simulate starting torque. Leave this on if you are unsure.
+    
+    LSX = 0 #Low Speed Excitation. Use this for limiting the starting power on High Power to Weight Locomotives. Applies from 0-15 MPH, will limit your power output as you speed up you gain more.
+    # Note that this is a multiplication valve.
 
     MaxTractionMotorCurrent = 1500
-    MaxContinuousTractionMotorCurrent = 1050
+    MaxContinuousTractionMotorCurrent = 1000
     TractionMotorType = 0 #0 for DC, 1 for AC
-    DynamicMode = 1
+    DynamicMode = 2
     #0 = No Dynamic Brakes
     #1 = Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
     #2 = Dynamic Brakes with Electrically-Driven Traction Motor Blowers
@@ -128,11 +142,11 @@ if(first()){
     #1 = Latched Primer, Manual Start
     #2 = Fully Automatic Start
 
-    Horsepower = 3600 #Locomotive Horsepower
-    Weight = 420000 #Locomotive Weight (in LB)
+    Horsepower = 2500 #Locomotive Horsepower
+    Weight = 244800 #Locomotive Weight (in LB)
 
     BaseSpeed = 71 #The top speed that's considered "normal" for this locomotive.
-    TopSpeed = 65 #Top Speed, in Miles per Hour, that the locomotive is capable of reaching due to the gearing. If you don't know, put 65.
+    TopSpeed = 71 #Top Speed, in Miles per Hour, that the locomotive is capable of reaching due to the gearing. If you don't know, put 65.
     ClaspBrakes = 1 #Set to 1 if you have trucks fitted with Double Clasp or Triple Clasp brake cylinders.
 
     # --// Controls //--
@@ -145,11 +159,11 @@ if(first()){
     Controls["IncreaseThrottle",string] = "D"
     Controls["DecreaseThrottle",string] = "A"
     
-    Controls["IncreaseDynamics",string] = "right"
-    Controls["DecreaseDynamics",string] = "left"
+    Controls["IncreaseDynamics",string] = ""
+    Controls["DecreaseDynamics",string] = ""
     
-    Controls["SelectorUp",string] = "rbracket +Shift"
-    Controls["SelectorDown",string] = "lbracket +Shift"
+    Controls["SelectorUp",string] = "right"
+    Controls["SelectorDown",string] = "left"
     
     Controls["IncreaseTrainBrake",string] = "W +Shift"
     Controls["DecreaseTrainBrake",string] = "S +Shift"
@@ -163,10 +177,10 @@ if(first()){
     
     Controls["UseButton",string] = "mouse_left"
     
-    LeverBased = 0 #0 for Control-Based, 1 for Lever-Based
-    #When available, this enables the Lever-Based Control mode. This means that the key controls the LEVER, not the CONTROL.
-    #For example consider a locomotive with a Selector Lever. Normally you'd press [IncreaseDynamics] to turn on the dynamic braking
-    #With LeverBased mode, in order to turn on the dynamics you have to be in the "Off" selector notch and press [DecreaseTransition] to turn on the dynamics.
+    Controls["EmergBrake",string] = "rshift"
+    
+
+    # --- END OF CONFIG ---
 
     foreach(K,V:string = Controls){
         if(V:find(" +Shift")){
@@ -189,13 +203,14 @@ if(first()){
     TransitionShunts3 = TransitionShunts[3,number]
     TransitionShunts4 = TransitionShunts[4,number]
 }
-CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
-CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
-AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBellStart,
-MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM,
-EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd,TransitionFS,TransitionNS,TransitionRS,FeedPressure,MainReservoirPressure,MainReservoirRechragePressure,
-WheelSlipLoop,WheelSlipEnd,LocomotiveType,DPM,HEP,HEP_Subtract,HEPTYPE,StarterMode,Prime,PrimeEnd,StartupClagDelay,StartupClagDuration,PrimerDuration,DPM_Delay,TransitionGroups1,
-TransitionGroups2,TransitionGroups3,TransitionGroups4,TransitionShunts1,TransitionShunts2,TransitionShunts3,TransitionShunts4,DynamicMode,LoadRampSpeed,LowSpeedRamp)
+CONFIGURATION_DATA = array(Shift,SelectorLever,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume, #11
+CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff, #21
+AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed,AlarmBellStart, #32
+MaxGeneratorCurrent,Motors,Axles,MaxTractionMotorCurrent,MaxContinuousTractionMotorCurrent,TractionMotorType,MaxDynamicCurrent,MaxContinuousDynamicCurrent,EngineIdleRPM, #41
+EngineRedlineRPM,NumNotches,Horsepower,Weight,BaseSpeed,TopSpeed,ClaspBrakes,AlarmBellEnd,TransitionFS,TransitionNS,TransitionRS,FeedPressure,MainReservoirPressure,MainReservoirRechragePressure, #55
+WheelSlipLoop,WheelSlipEnd,LocomotiveType,DPM,HEP,HEP_Subtract,HEPTYPE,StarterMode,Prime,PrimeEnd,StartupClagDelay,StartupClagDuration,PrimerDuration,DPM_Delay,TransitionGroups1, #70
+TransitionGroups2,TransitionGroups3,TransitionGroups4,TransitionShunts1,TransitionShunts2,TransitionShunts3,TransitionShunts4,DynamicMode,LoadRampSpeed,LowSpeedRamp,BlendedBraking,TransitionMode, #82
+SandOn,SandOff,LSX)
 
 CONFIGURATION_CONTROL_DATA = Controls
 CONFIGURATION_ROUTING_DATA = Routing

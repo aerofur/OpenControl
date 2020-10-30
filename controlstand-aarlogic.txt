@@ -1,16 +1,16 @@
 @name OpenControl/controlstand-aarlogic
-@inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout GroundRelayReset UsingRearSeat InsertReverser Horn Sand
+@inputs ControlStand:entity Pod:entity BatteryKnife EngineRun GenField FuelPump Control BrakeCutout GroundRelayReset UsingRearSeat InsertReverser Horn Sand HEP_Up HEP_Down
 @inputs [MU_Front_In MU_Rear_In LOCOMOTIVE_AIRBRAKE_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA LOCOMOTIVE_PROCESSOR]:array [CONFIGURATION_CONTROL_DATA CONFIGURATION_ROUTING_DATA]:table
 @outputs [CONTROL_STAND_DATA MU_Front_Out MU_Rear_Out]:array ReverserRemoved Routing:table IsLead ConsistMotors DBWarning InServiceZone BrakeNotch AutomaticPressureSet Suppression Emergency
 @outputs Independent_Bail ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake
-@outputs SelectorUp SelectorDown HandleOff EmergencyBrake DynamicNotch DynamicsSetup DynamicsPowerZone MUCompressor SelectorNotch LocomotivePOS HasPM HasTM SlugMode
+@outputs SelectorUp SelectorDown HandleOff EmergencyBrake DynamicNotch DynamicsSetup DynamicsPowerZone MUCompressor SelectorNotch LocomotivePOS HasPM HasTM SlugMode Reverser Notch
 @persist [Driver DriverOld]:entity DriverQ Routing:table Controls:table Shift:string ThrottleA ThrottleB ThrottleC ThrottleD 
 @persist InServiceZone LocalEmergency BrakeNotch ServiceZone AutomaticPressureSet Suppression Emergency Independent_Bail
 @persist ReverserF ReverserB IncreaseThrottle DecreaseThrottle IncreaseDynamics DecreaseDynamics IncreaseTrainBrake DecreaseTrainBrake IncreaseLocoBrake DecreaseLocoBrake SelectorUp SelectorDown
 @persist HandBrake Sander ServiceHiss ServiceRelease IndHiss IndRelease EmergRelease LocoBrakePOS NumberOfNotches EmergencyBrake HandleOff
 @persist Notch UnNotchThrottleF UnNotchThrottleB Reverser ReverserLocal HornPullcord DynamicNotch DynamicsSetup DynamicsPowerZone DynamicUnlock 
 @persist DynamicNotchLocal DynamicsSetupLocal DynamicsPowerZoneLocal DynamicUnlockLocal NotchLocal Isolation EngineRunLocal GenFieldLocal GroundRelayResetLocal DBWarning MUReverserFW MUReverserBW
-@persist MUCompressor IsLead SelectorNotch SelectorMove LocomotivePOS HasPM HasTM SlugMode ConsistMotors
+@persist MUCompressor IsLead SelectorNotch SelectorMove LocomotivePOS HasPM HasTM SlugMode ConsistMotors ManualEmerg EmergencyBrakeHiss IndFeed
 @trigger BatteryKnife
 @model
 
@@ -19,12 +19,15 @@ if(first()){
     Controls = CONFIGURATION_CONTROL_DATA 
     Routing = CONFIGURATION_ROUTING_DATA
     
+    IndFeed = 72
+    
     ServiceHiss = 1
     ServiceRelease = 1
     IndHiss = 1
     IndRelease = 1
     EmergRelease = 0
     LocoBrakePOS = LOCOMOTIVE_AIRBRAKE_DATA[4,number]
+    EmergencyBrakeHiss = 0
     
     
     NotchLocal = 0
@@ -39,7 +42,7 @@ if(first()){
     NumberOfNotches = CONFIGURATION_DATA[43,number]
     ConsistMotors = 0
     
-    HornPullcord = 0
+    HornPullcord = 1
     
     UnitType = CONFIGURATION_DATA[58,number]
     
@@ -57,6 +60,8 @@ if(Control & FuelPump == 1){
 else{
     IsLead = 0
 }
+
+local HasSelector = CONFIGURATION_DATA[2,number]
 
 if(IsLead == 0){
     if(!Control & !EngineRun & !GenField & !FuelPump){
@@ -356,7 +361,7 @@ elseif(LOCOMOTIVE_PROCESSOR[16,number] == 0){
 
 CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
 DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRunLocal,GenFieldLocal,FuelPump,Control,Isolation,GroundRelayResetLocal,HandleOff,MUCompressor,
-IsLead,SelectorNotch,Sand,Sander,ConsistMotors,MUSand,GeneratorOut)
+IsLead,SelectorNotch,Sand,Sander,ConsistMotors,MUSand,GeneratorOut,HEP_Up,HEP_Down)
 
 local Driver = noentity()
 local PodDriver = Pod:driver()
@@ -400,6 +405,8 @@ if(Driver!=noentity()){
             
             SelectorUp = Driver:keyPressed(Controls["SelectorUp",string]) & (Routing["SelectorUp",number] ? Shifting : !Shifting)
             SelectorDown = Driver:keyPressed(Controls["SelectorDown",string]) & (Routing["SelectorDown",number] ? Shifting : !Shifting)
+            
+            ManualEmerg = Driver:keyPressed(Controls["EmergBrake",string]) & (Routing["EmergBrake",number] ? Shifting : !Shifting)
         }
     }
 }
@@ -446,16 +453,14 @@ elseif(!InsertReverser & ReverserLocal == 0){
 }
 
 
-local HasSelector = CONFIGURATION_DATA[2,number]
-
 if(HasSelector == 1){
     if(changed(SelectorUp)&SelectorUp){
-        if(SelectorNotch<5){
+        if(SelectorNotch<4){
             SelectorNotch+=1
         }
     } 
     elseif(changed(SelectorDown)&SelectorDown){
-        if(SelectorNotch>0){
+        if(SelectorNotch>-1){
             SelectorNotch-=1
         }
     } 
@@ -466,16 +471,13 @@ if(HasSelector == 1){
     elseif(changed(SelectorDown)&SelectorDown){
         SelectorMove = 0
     }
-    elseif(changed(!SelectorDown & !SelectorUp)&!SelectorDown & !SelectorUp){
-        SelectorMove = 1
-    }
 
-    if(SelectorMove != 1){
-        SelectorMove = 1
-    }
-
-    ControlStand:setBodygroup(3,SelectorNotch)
+    ControlStand:setBodygroup(3,(SelectorNotch == -1 ? 5 : SelectorNotch))
     ControlStand:setBodygroup(9,SelectorMove)
+    
+    if(SelectorMove != 1){
+        SelectorMove = 1    
+    }
 }
 
 if(HasSelector == 0){
@@ -627,7 +629,7 @@ if(HasSelector == 0){
     }
 }
 elseif(HasSelector == 1){
-    if(SelectorNotch == 5){
+    if(SelectorNotch == -1){
         DynamicUnlockLocal = 0
         DynamicsPowerZoneLocal = (NotchLocal*10)
         DynamicNotchLocal = 2
@@ -643,7 +645,7 @@ elseif(HasSelector == 1){
             DynamicUnlockLocal = 0   
         }  
     }
-    elseif(SelectorNotch<5){
+    elseif(SelectorNotch>-1){
         DynamicUnlockLocal = 0
         DynamicsPowerZoneLocal = 0
         DynamicNotchLocal = 0
@@ -703,6 +705,17 @@ elseif(CONFIGURATION_DATA[22,number] == 2){
 }
 
 if(CONFIGURATION_DATA[22,number]<2){
+    if(changed(ManualEmerg)&ManualEmerg){
+        BrakeNotch = 5      
+        AutomaticPressureSet = 0
+        LocalEmergency = 1
+        Suppression = 1
+        Emergency = 1
+        HandleOff = 0
+        EmergencyBrake = 1
+        EmergencyBrakeHiss = 1
+    }
+    
     switch(BrakeNotch){
         case 0,
             ControlStand:setBodygroup(4,0)
@@ -726,15 +739,14 @@ if(CONFIGURATION_DATA[22,number]<2){
             ControlStand:setBodygroup(4,8)
             if(!LocalEmergency){
                 Suppression = 1
+                AutomaticPressureSet = 0
             }
             HandleOff = 0
         break
         case 4,
             ControlStand:setBodygroup(4,10)
             Suppression = 0
-            if(BrakeCutout<1){
             AutomaticPressureSet = 0
-            }
             HandleOff = 1
         break
         case 5,
@@ -744,10 +756,23 @@ if(CONFIGURATION_DATA[22,number]<2){
             Suppression = 1
             Emergency = 1
             HandleOff = 0
+            EmergencyBrake = 1
+            EmergencyBrakeHiss = 1
         break
-    }
+    }   
 }
 elseif(CONFIGURATION_DATA[22,number] == 2){
+    if(changed(ManualEmerg)&ManualEmerg){
+        BrakeNotch = 4 
+        AutomaticPressureSet = 0
+        LocalEmergency = 1
+        Suppression = 1
+        Emergency = 1
+        HandleOff = 0   
+        EmergencyBrake = 1 
+        EmergencyBrakeHiss = 1 
+    }
+    
     switch(BrakeNotch){
         case 0,
             ControlStand:setBodygroup(4,0)
@@ -776,8 +801,15 @@ elseif(CONFIGURATION_DATA[22,number] == 2){
             Suppression = 1
             Emergency = 1
             EmergencyBrake = 1
+            EmergencyBrakeHiss = 1
         break
     }
+}
+
+if(EmergencyBrakeHiss){
+    if(changed(BrakeNotch)){
+        EmergencyBrakeHiss = 0    
+    }  
 }
 
 if(IncreaseLocoBrake & LocoBrakePOS<65){
@@ -803,7 +835,7 @@ elseif(Independent_Bail){
 
 if(CONFIGURATION_DATA[22,number]<2){
     if(BrakeCutout>0){ 
-        if(!EmergencyBrake){
+        if(!EmergencyBrakeHiss){
             
             if(ServiceHiss){
                 if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
@@ -831,27 +863,27 @@ if(CONFIGURATION_DATA[22,number]<2){
                 stoptimer("servicehissRLB")
             }
         }
-        elseif(EmergencyBrake){
-            if(changed(EmergencyBrake)&EmergencyBrake){
+        elseif(EmergencyBrakeHiss){
+            if(changed(EmergencyBrakeHiss)&EmergencyBrakeHiss){
                 ControlStand:soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
-                EmergRelease = 2
+                EmergRelease = 1
             }    
         }
 
-        if(EmergRelease == 2){
+        if(EmergRelease == 1){
             if(changed(BrakeNotch<5)&BrakeNotch<5){
-                EmergRelease = 1
+                EmergRelease = 0
             }
         }
         
-        if(changed(EmergRelease)&EmergRelease){
+        if(changed(EmergRelease)&!EmergRelease){
             ControlStand:soundPlay("emrgrelease",0,CONFIGURATION_DATA[17,string])
         } 
     }
 }
 elseif(CONFIGURATION_DATA[22,number] == 2){
     if(BrakeCutout>0){ 
-        if(!EmergencyBrake){
+        if(!EmergencyBrakeHiss){
             
             if(ServiceHiss){
                 if(changed(BrakeNotch & IncreaseTrainBrake)&BrakeNotch & IncreaseTrainBrake){
@@ -879,20 +911,20 @@ elseif(CONFIGURATION_DATA[22,number] == 2){
                 stoptimer("servicehissRLB")
             }
         }
-        elseif(EmergencyBrake){
-            if(changed(EmergencyBrake)&EmergencyBrake){
+        elseif(EmergencyBrakeHiss){
+            if(changed(EmergencyBrakeHiss)&EmergencyBrakeHiss){
                 ControlStand:soundPlay("emrgapply",0,CONFIGURATION_DATA[16,string])   
-                EmergRelease = 2
+                EmergRelease = 1
             }    
         }
 
-        if(EmergRelease == 2){
+        if(EmergRelease == 1){
             if(changed(BrakeNotch<4)&BrakeNotch<4){
-                EmergRelease = 1
+                EmergRelease = 0
             }
         }
         
-        if(changed(EmergRelease)&EmergRelease){
+        if(changed(EmergRelease)&!EmergRelease){
             ControlStand:soundPlay("emrgrelease",0,CONFIGURATION_DATA[17,string])
         } 
     }
@@ -907,7 +939,7 @@ elseif(changed(Independent_Bail)&!Independent_Bail){
 
 if(CONFIGURATION_DATA[23,number] == 0){
     if(!Independent_Bail){
-        if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<65){
+        if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<IndFeed){
             if(IndHiss){
                 if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
                     ControlStand:soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])
@@ -940,7 +972,7 @@ if(CONFIGURATION_DATA[23,number] == 0){
 elseif(CONFIGURATION_DATA[23,number] == 1){
     if(!Independent_Bail){
         if(LOCOMOTIVE_AIRBRAKE_DATA[7,number]!=1){
-            if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<65){
+            if(LOCOMOTIVE_AIRBRAKE_DATA[4,number]<IndFeed){
                 if(IndHiss){
                     if(changed(IncreaseLocoBrake)&IncreaseLocoBrake){
                         ControlStand:soundPlay("indhiss",0,CONFIGURATION_DATA[18,string])

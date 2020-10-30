@@ -1,5 +1,5 @@
 @name OpenControl/engine-sound-processor
-@inputs Locomotive:entity Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 [CONTROL_STAND_DATA CONFIGURATION_DATA]:array 
+@inputs Locomotive:entity Prime1 Prime2 Start1 Start2 Shutdown1 Shutdown2 Isolation1 Isolation2 [LOCOMOTIVE_PROCESSOR CONTROL_STAND_DATA CONFIGURATION_DATA]:array 
 @outputs [ENGINE_SOUND_DATA]:array Primed1 Primed2 PrimerSet1 PrimerSet2 Clag1 Clag2 On1 On2 EngineNotch1 EngineSpeed1
 @persist Startup_Mode Shutdown_Mode FuelSaverMode FuelSaverDelay NumThrottleNotches NumEngineNotches PrimerDuration MU_Master
 @persist [Startup_Hi Startup_Lo Shutdown_Hi Shutdown_Lo TransitionPath TransitionToLow TransitionToHigh Idle_Low]:string [Notches EngineBehavior UpDelays DownDelays UpOverrides DownOverrides]:array
@@ -14,36 +14,36 @@
 if(dupefinished() | duped()){ reset() }
 if(first()){ 
     
-    Startup_Hi = "gsgtrainsounds/emd645e3bv16/startup_high.wav" #Startup Sound to put the engine in High (Normal) Idle.
-    Startup_Lo = "gsgtrainsounds/emd645e3bv16/startup_low.wav" #Startup Sound to put the engine in Low Idle.
+    Startup_Hi = "gsgtrainsounds/emd567e4v16/startup.wav" #Startup Sound to put the engine in High (Normal) Idle.
+    Startup_Lo = "" #Startup Sound to put the engine in Low Idle.
     Startup_Mode = 1 #0 for Low, 1 for High
     
-    Shutdown_Hi = "gsgtrainsounds/emd645e3bv16/shutdown_high.wav" #Shutdown Sound from High Idle.
-    Shutdown_Lo = "gsgtrainsounds/emd645e3bv16/shutdown_low.wav" #Shutdown Sound from Low Idle.
+    Shutdown_Hi = "gsgtrainsounds/emd567e4v16/shutdown.wav" #Shutdown Sound from High Idle.
+    Shutdown_Lo = "" #Shutdown Sound from Low Idle.
     Shutdown_Mode = 1 #0 for Low, 1 for High, 2 for Both as the situation demands it
     
     FuelSaverMode = 0 #If set to 1, the locomotive will go into and out of Low Idle as the reverser is moved in and out of Neutral
     FuelSaverDelay = 0 #Time, in seconds, for engine to fall into Low Idle, if used.
     
-    TransitionToLow = "gsgtrainsounds/emd645e3bv16/transitions/down/idle-idle_low.wav" #Transition sound for High to Low idle, if used.
-    TransitionToHigh = "gsgtrainsounds/emd645e3bv16/transitions/up/0-1b.wav" #Transition sound for Low to High idle, if used.
-    Idle_Low = "gsgtrainsounds/emd645e3bv16/idle_low.wav" #Sound for Low Idle, if used.
+    TransitionToLow = "" #Transition sound for High to Low idle, if used.
+    TransitionToHigh = "" #Transition sound for Low to High idle, if used.
+    Idle_Low = "" #Sound for Low Idle, if used.
     
     Notches = array(
-        "gsgtrainsounds/emd645e3bv16/idle.wav", #Idle
-        "gsgtrainsounds/emd645e3bv16/notch1.wav", #Notch 1
-        "gsgtrainsounds/emd645e3bv16/notch2.wav", #Notch 2
-        "gsgtrainsounds/emd645e3bv16/notch3.wav", #Notch 3
-        "gsgtrainsounds/emd645e3bv16/notch4.wav", #And so On
-        "gsgtrainsounds/emd645e3bv16/notch5.wav",
-        "gsgtrainsounds/emd645e3bv16/notch6.wav",
-        "gsgtrainsounds/emd645e3bv16/notch7.wav",
-        "gsgtrainsounds/emd645e3bv16/notch8.wav"
+        "gsgtrainsounds/emd567e4v16/idle.wav", #Idle
+        "gsgtrainsounds/emd567e4v16/notch1.wav", #Notch 1
+        "gsgtrainsounds/emd567e4v16/notch2.wav", #Notch 2
+        "gsgtrainsounds/emd567e4v16/notch3.wav", #Notch 3
+        "gsgtrainsounds/emd567e4v16/notch4.wav", #And so On
+        "gsgtrainsounds/emd567e4v16/notch5.wav",
+        "gsgtrainsounds/emd567e4v16/notch6.wav",
+        "gsgtrainsounds/emd567e4v16/notch7.wav",
+        "gsgtrainsounds/emd567e4v16/notch8.wav"
     )
     
-    TransitionPath = "gsgtrainsounds/emd645e3bv16/transitions/"
+    TransitionPath = "gsgtrainsounds/emd567e4v16/transitions/"
     #---------------------0-1,1-2,2-3,3-4,4-5,5-6,6-7,7-8
-    EngineBehavior = array(4,  0,  0,  0,  0,  0,  0,  0)
+    EngineBehavior = array(1,  0,  0,  0,  0,  0,  0,  0)
     #0 - A/B Notching
     #1 - Full Sweep
     #2 - Instant Change
@@ -55,7 +55,7 @@ if(first()){
     DownDelays = array(750, 900,  900, 850, 1000,1600,1432)
     
     UpOverrides = array(
-        "gsgtrainsounds/emd645e3bv16/transitions/up/idle-1.wav", #0-1
+        "", #0-1
         "", #1-2
         "", #2-3
         "", #3-4
@@ -73,7 +73,7 @@ if(first()){
         "", #4-3
         "", #3-2
         "", #2-1
-        "gsgtrainsounds/emd645e3bv16/transitions/down/1-idle.wav"  #1-0
+        ""  #1-0
     )
     
     StartupClagDelay = CONFIGURATION_DATA[66,number]
@@ -656,31 +656,26 @@ Tick = clk("clk")
 
 if(clk("clk")){
     ENGINE_SOUND_DATA = array(Primed1,Primed2,PrimerSet1,PrimerSet2,Clag1,Clag2,On1,On2,EngineNotch1,EngineSpeed1,Isolation1,Isolation2)
-    #CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,Independent_Bail,EmergencyBrake,
-    #DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch,BatteryKnife,EngineRun,GenField,FuelPump,Control,Isolation,Prime1,Prime2,Start1,Start2,
-    #Shutdown1,Shutdown2,Isolation1,Isolation2)
     EngineRun = CONTROL_STAND_DATA[20,number]
     GenField = CONTROL_STAND_DATA[21,number]
     BatteryKnife = CONTROL_STAND_DATA[19,number]
     Reverser = CONTROL_STAND_DATA[16,number]
-    #[
-    Prime1 = CONTROL_STAND_DATA[23,number]
-    Prime2 = CONTROL_STAND_DATA[24,number]
-    Start1 = CONTROL_STAND_DATA[25,number]
-    Start2 = CONTROL_STAND_DATA[26,number]
-    Shutdown1 = CONTROL_STAND_DATA[27,number]
-    Shutdown2 = CONTROL_STAND_DATA[28,number]
-    Isolation1 = CONTROL_STAND_DATA[29,number]
-    Isolation2 = CONTROL_STAND_DATA[30,number]
-    ]#
+    
     if(CONTROL_STAND_DATA[12,number]>0){
         Throttle = 4   
     }
     elseif(CONTROL_STAND_DATA[12,number] == 0){
         Throttle = CONTROL_STAND_DATA[18,number]
     }
+    
+    local HEP_Notch = LOCOMOTIVE_PROCESSOR[20,number]
 
-    EngineNotch1 = Throttle
+    if(HEP_Notch){
+        EngineNotch1 = HEPTYPE ? max(HEP_Notch*2,Throttle) : HEP_Notch*4
+    }
+    else{
+        EngineNotch1 = Throttle   
+    }
     timer("clk",100)
 }
 

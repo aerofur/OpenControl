@@ -1,10 +1,10 @@
 @name OpenControl/sound-processor
-@inputs Locomotive:entity [LOCOMOTIVE_AIRBRAKES_DATA CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_PROCESSOR ENGINE_SOUND_DATA Trucks]:array
+@inputs [Locomotive FrontTruck RearTruck]:entity [LOCOMOTIVE_AIRBRAKES_DATA CONTROL_STAND_DATA CONFIGURATION_DATA LOCOMOTIVE_PROCESSOR ENGINE_SOUND_DATA Trucks]:array
 @outputs F1 FansC1 FansCA1
 @persist [Fan1Position Fan2Position Fan3Position DynamicFan1Position DynamicFan2Position]:vector Fans Dynamics DynamicFans HasDynamics
 @persist DynamicFansCA DynamicFansC1 DynamicFansCA2 DynamicFansC2 FansC1 FansC2 FansC3 FansCA1 FansCA2 FansCA3 FanSpeed SpinUp
 @persist Temperature FuelSaver Tmax Horsepower AmbientLoss IdleHeat Run8Heat FanHeat F1_On F1_Off F2_On F2_Off F3_On F3_Off F1 F2 F3 Speed1 Speed2 Speed3 SpeedD
-@persist [E W O FrontTruck RearTruck]:entity DroneQ SquealQ RollQ RailType ClicketyQ MPH
+@persist [E W O FrontTruck RearTruck]:entity DroneQ SquealQ RollQ RailType ClicketyQF ClicketyQR MPH
 @trigger none
 @model
 
@@ -20,14 +20,14 @@ if(first()){
 
     # --// Fans //--
     
-    Fans = 3 #Number of Fans, Max is 3.
-    Fan1Position = vec(157+20,0,136)
-    Fan2Position = vec(214+24,0,136)
-    Fan3Position = vec(271+28,0,136)
+    Fans = 0 #Number of Fans, Max is 3.
+    Fan1Position = vec(157+18,0,136)
+    Fan2Position = vec(171,0,136)
+    Fan3Position = vec(243,0,136)
     
     # --// Dynamic Fans //--
     
-    HasDynamics = 1 #Set to 1 if your Locomotive has Dynamics, else set to 0.
+    HasDynamics = 0 #Set to 1 if your Locomotive has Dynamics, else set to 0.
     DynamicFans = 2 #Number of Dynamic Fans, Max is 2.
     DynamicFan1Position = vec(15-26,0,136)
     DynamicFan2Position = vec(72-25.5,0,136)
@@ -63,7 +63,7 @@ if(HasDynamics){
     }
 }
 if(Fans!=0){
-    if(Fans>=1){
+    if(Fans == 1){
         A = 3
         holoCreate(A)
         holoParent(A,Locomotive)
@@ -85,7 +85,7 @@ if(Fans!=0){
         holoAng(A,Locomotive:toWorld(ang(0,randint(1,361),0)))    
         holoMaterial(A,FanTexture)
     }
-    if(Fans>=1){
+    if(Fans>=2){
         A = 5
         holoCreate(A)
         holoParent(A,Locomotive)
@@ -100,7 +100,7 @@ if(Fans!=0){
 
 E = entity()
 O = owner()
-W = E:isWeldedTo()
+W = LOCOMOTIVE_PROCESSOR[10,entity]
 
 AmbientLoss = 0
 F1_On = 40
@@ -126,21 +126,6 @@ RollQ = 0
 DroneQ = 0
 ClicketyQ = 0
 SquealQ = 0
-
-local MaxDot = 0
-local MinDot = 0
-foreach(K,V:entity=Trucks){
-    local Dot = (V:pos()-W:pos()):dot(-E:up())
-    #print(Dot)
-    if(Dot>MaxDot){
-        MaxDot = Dot
-        FrontTruck = V
-    }
-    elseif(Dot<MinDot){
-        MinDot = Dot
-        RearTruck = V
-    }
-}
 
 function number linearRamp(RunRamp,RampSpeed){
     local Var = 0
@@ -194,19 +179,16 @@ if(EngineOn){
         }
     }
     
-    if(DynamicFans>=1){
+    if(DynamicFans == 1){
         DynamicFansC1 = DynamicFansC1 + (DynamicFansCA - DynamicFansC1) / max(10,0)     
         holoAng(1,Locomotive:toWorld(ang(0,0-DynamicFansC1,0)))
     }
     
-    if(DynamicFans>=2){
+    if(DynamicFans == 2){
         DynamicFansC2 = DynamicFansC2 + (DynamicFansCA2 - DynamicFansC2) / max(10,0)     
         holoAng(2,Locomotive:toWorld(ang(0,0-DynamicFansC2,0)))
     }
     
-#CONTROL_STAND_DATA = array(IncreaseTrainBrake,DecreaseTrainBrake,BrakeNotch,AutomaticPressureSet,Suppression,Emergency,BrakeCutout,IncreaseLocoBrake,DecreaseLocoBrake,
-#Independent_Bail,EmergencyBrake,DynamicNotch,DynamicsSetup,DynamicsPowerZone,DynamicUnlock,Reverser,ReverserRemoved,Notch)
-
     local HeatAdded = IdleHeat + (abs(CONTROL_STAND_DATA[16,number]) ? 1 : 0.5)*Run8Heat*(CONTROL_STAND_DATA[18,number]+(CONTROL_STAND_DATA[14,number]/10))/100
     local HeatRemoved = 5*(IdleHeat)*(F1 + F2 + F3)/(Fans) + AmbientLoss
     
@@ -234,13 +216,11 @@ if(EngineOn){
         F3 = 0
     }
     
-    if(Fans>=1){
+    if(Fans >= 1){
         if(F1){
-            F1 = 1
             FansCA1 += FanSpeed
         }
         elseif(!F1){
-            F1 = 0
             FansCA1 = 0
         }
     }
@@ -248,9 +228,8 @@ if(EngineOn){
         FansCA1 = 0   
     }
     
-    if(Fans>=2){
+    if(Fans >= 2){
         if(F2){
-            F2 = 1
             FansCA2 += FanSpeed
         }
         elseif(!F2){
@@ -261,7 +240,7 @@ if(EngineOn){
         FansCA2 = 0
     }
         
-    if(Fans>=3){
+    if(Fans >= 3){
         if(F3){
             FansCA3 += FanSpeed
         }
@@ -272,70 +251,6 @@ if(EngineOn){
     else{
         FansCA2 = 0
     }
-    
-    if(changed(DroneQ)&DroneQ){
-        Trucks[1,entity]:soundPlay("traction-motor1",0,CONFIGURATION_DATA[24,string])
-        Trucks[1,entity]:soundPlay("traction-motor2",0,CONFIGURATION_DATA[24,string])
-    }   
-    
-    if((RollQ) & !DroneQ){
-        DroneQ = 1
-    }
-    elseif(!RollQ & DroneQ){
-        DroneQ = 0
-        soundStop("traction-motor1",0.1)
-        soundStop("traction-motor2",0.1)
-    }
-    
-    if(DroneQ){
-        soundPitch("traction-motor1",100*MPH/40)
-        soundVolume("traction-motor1",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_PROCESSOR[2,number])/200,0.5,1))
-        soundPitch("traction-motor2",100*MPH/40)
-        soundVolume("traction-motor2",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_PROCESSOR[2,number])/200,0.5,1))
-    }
-    
-    if((MPH>1) & !RollQ){
-        RollQ = 1
-        Locomotive:soundPlay("tracksound",0,RailType ? CONFIGURATION_DATA[31,string] : CONFIGURATION_DATA[30,string])
-    }
-    elseif((MPH<1) & RollQ){
-        RollQ = 0
-        soundStop("tracksound")
-    }
-    
-    if(RollQ){
-        if(!RailType){
-            local LeadTruck = (LOCOMOTIVE_PROCESSOR[7,number]>0) ? FrontTruck : RearTruck
-            rangerFilter(W)
-            rangerFilter(LeadTruck)
-            local CCRanger = rangerOffset(128,LeadTruck:pos(),vec(0,0,-1))
-            local OnSwitch = (CCRanger:entity():type())==("prop_dynamic")
-            if(OnSwitch & !ClicketyQ){
-                ClicketyQ = 1
-                Locomotive:soundPlay("tracksound",0,CONFIGURATION_DATA[31,string])
-            }
-            elseif(!OnSwitch & ClicketyQ){
-                ClicketyQ = 0
-                Locomotive:soundPlay("tracksound",0,CONFIGURATION_DATA[30,string])
-            }
-        }
-        soundPitch("tracksound",MPH*3.3)
-    }
-    
-    #LOCOMOTIVE_CIRCUIT_DATA = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train)
-    
-    local Braking_Train = LOCOMOTIVE_PROCESSOR[6,number]
-    local Braking_Loco = LOCOMOTIVE_PROCESSOR[5,number]
-    
-    if(Braking_Loco & (inrange(MPH,0.5,8)) & !SquealQ){
-        SquealQ = 1
-        Locomotive:soundPlay("brakesqueal",0,CONFIGURATION_DATA[29,string])
-    }
-    elseif((!Braking_Loco | (!inrange(MPH,0.5,8))) & SquealQ){
-        SquealQ = 0
-        soundStop("brakesqueal",0.5)
-    }
-
 } #End of EngineOn block
 else{
     AmbientLoss = 0
@@ -378,7 +293,7 @@ elseif(changed(Dynamics)&!Dynamics){
     }
 }
   
-if(Fans>=1){
+if(Fans >= 1){
     if(changed(F1)&F1){
     holoEntity(3):soundPlay("Fan1",0,CONFIGURATION_DATA[25,string]) 
     }
@@ -387,7 +302,7 @@ if(Fans>=1){
     }
 }
 
-if(Fans>=2){        
+if(Fans >= 2){        
     if(changed(F2)&F2){
     holoEntity(4):soundPlay("Fan2",0,CONFIGURATION_DATA[25,string]) 
     }
@@ -396,7 +311,7 @@ if(Fans>=2){
     }
 }
 
-if(Fans>=3){       
+if(Fans >= 3){       
     if(changed(F3)&F3){
         holoEntity(5):soundPlay("Fan3",0,CONFIGURATION_DATA[25,string]) 
     }
@@ -414,10 +329,67 @@ if(clk("stopthemfans")){
     stoptimer("stopthemfans")
 }
 
-#LOCOMOTIVE_DATA = array(MainReservoir,EqualizingReservoir,BrakePipe,BrakeCylinder,AutomaticAFM,IndependentAFM,IndNotch,BrakePipeLocalAnglecock,BrakePipeLocal,Compressor)
+# Track Sounds
 
-#CONFIGURATION_DATA = array(Shift,LeverBased,ReverserFS,ReverserNS,ReverserRS,ThrottleAdvance,ThrottleRetreat,DynamicThrottleAdvance,DynamicThrottleRetreat,Compressor_CFM,MainReservoirVolume,
-#CompressorStart,CompressorShutdown,AutomaticApply,AutomaticRelease,AutomaticEmergency,AutomaticEmergencyRelease,IndependentApply,IndependentRelease,IndependentBailOn,IndependentBailOff,
-#AutomaticBrakeType,IndependentBrakeType,TractionMotor,RadiatorFanStart,RadiatorFanEnd,DynamicFanStart,DynamicFanEnd,BrakeSqueal,RollSoundWelded,RollSoundJointed)
-    
-    
+if((MPH>1) & !RollQ){
+    RollQ = 1
+    #Locomotive:soundPlay("tracksound",0,RailType ? CONFIGURATION_DATA[31,string] : CONFIGURATION_DATA[30,string])
+}
+elseif((MPH<1) & RollQ){
+    RollQ = 0
+    soundStop("tracksound",0.3)
+}
+
+if((RollQ) & !DroneQ){
+    DroneQ = 1
+}
+elseif(!RollQ & DroneQ){
+    DroneQ = 0
+    soundStop("traction-motor1",0.1)
+    soundStop("traction-motor2",0.1)
+}
+
+if(changed(DroneQ)&DroneQ){
+    Trucks[1,entity]:soundPlay("traction-motor1",0,CONFIGURATION_DATA[24,string])
+    Trucks[2,entity]:soundPlay("traction-motor2",0,CONFIGURATION_DATA[24,string])
+}
+
+if(DroneQ){
+    soundPitch("traction-motor1",100*MPH/40)
+    soundVolume("traction-motor1",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_PROCESSOR[2,number])/200,0.5,1))
+    soundPitch("traction-motor2",100*MPH/40)
+    soundVolume("traction-motor2",clamp((MPH/5),0,1)*clamp(abs(LOCOMOTIVE_PROCESSOR[2,number])/200,0.5,1))
+}
+
+if(RollQ){
+    if(!RailType){
+        rangerFilter(W)
+        rangerFilter(FrontTruck)
+        local CCRanger = rangerOffset(128,FrontTruck:pos(),vec(0,0,-1))
+        local OnSwitchFront = (CCRanger:entity():type()) == ("prop_dynamic")
+        
+        if(OnSwitchFront & !ClicketyQF){
+            ClicketyQF = 1
+            FrontTruck:soundPlay("tracksound",0,CONFIGURATION_DATA[31,string])
+        }
+        elseif(!OnSwitchFront & ClicketyQF){
+            ClicketyQF = 0
+            FrontTruck:soundPlay("tracksound",0,CONFIGURATION_DATA[30,string])
+        }
+    }
+    soundPitch("tracksound",MPH*3.3)
+}
+
+# Braking Sounds
+
+local Braking_Train = LOCOMOTIVE_PROCESSOR[6,number]
+local Braking_Loco = LOCOMOTIVE_PROCESSOR[5,number]
+
+if(Braking_Loco & (inrange(MPH,0.5,8)) & !SquealQ){
+    SquealQ = 1
+    Locomotive:soundPlay("brakesqueal",0,CONFIGURATION_DATA[29,string])
+}
+elseif((!Braking_Loco | (!inrange(MPH,0.5,8))) & SquealQ){
+    SquealQ = 0
+    soundStop("brakesqueal",0.5)
+}

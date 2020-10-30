@@ -1,13 +1,15 @@
 @name OpenControl/Diesel-Electric-Processor
 @inputs Locomotive:entity HandBrake [LOCOMOTIVE_AIRBRAKE_DATA CONTROL_STAND_DATA CONFIGURATION_DATA ENGINE_SOUND_DATA Trucks SpanBolsters]:array
 @outputs [LOCOMOTIVE_PROCESSOR]:array
-@outputs Load MPH KPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount MotorTemp DynamicTemp TrainWeight WheelSlip Sanding CurrentBO RampedMotorVoltage
+@outputs Load MPH KPH DynamicBrakeWarning GroundRelay BE BEAuto Force TE CarCount MotorTemp DynamicTemp TrainWeight WheelSlip Sanding CurrentBO RampedMotorVoltage SlippingFactor TransitionNumber LowSpeedCurve
+@outputs Dynamics CEMF Current
 @persist [E O W]:entity [SmoothTable]:table LastProps:array CEMF R MainGeneratorVoltage MaxGeneratorVoltage MotorVoltage CircuitType CurrentBO Current DBCurrent Load
 @persist TE V BHQ Braking_Train Braking_Loco BrakeMul MaxTrainBrakeForce Holding TE_Effective TE_EffectiveLoad AutoMux CarCount BEVLB TrainWeight
 @persist DynamicTemp MotorTemp DynamicShort MotorShort GroundRelay DBArking TMArking FixNils RampedMotorVoltage EngineRPMCal DynoHPINCR FBWD FFWD
 @persist Motors MaxGeneratorCurrent MaxTractionMotorCurrent MaxContinuousTractionMotorCurrent MaxDynamicCurrent MaxContinuousDynamicCurrent EngineIdleRPM EngineRedlineRPM NumNotches Axles
 @persist Horsepower Weight BaseSpeed TopSpeed ClaspBrakes [AlarmBellStart AlarmBellEnd]:string Adhesion WeightOnAxle TE_Starting Dynamics LowSpeedCurve SlippingFactor FeedPressure
-@persist HasPM HasTM SlugMode Sander ForceSand TotalMotors
+@persist HasPM HasTM SlugMode Sander ForceSand TotalMotors HP_Effective HEP HEP_Subtract HEPTYPE HEP_Notch HEPQ LoadAfterSlip [TransitionThresholds TransitionGroups TransitionShunts]:array TransitionNumber
+@persist TransitionNotches LSX
 @trigger none
 @model
 
@@ -37,6 +39,7 @@ if(first()){
     AlarmBellEnd = CONFIGURATION_DATA[49,string]
     Adhesion = CONFIGURATION_DATA[53,number]
     FeedPressure = CONFIGURATION_DATA[53,number]
+    LSX = CONFIGURATION_DATA[85,number]
     
     MainGeneratorVoltage = 0
     MaxGeneratorVoltage = 1500
@@ -68,11 +71,29 @@ if(first()){
     EngineRPMCal = 0
     Dynamics = 0
     Sander = 0
+    HEPQ = 0
+    HEP_Notch = 0
+    LoadAfterSlip = 0
     
     WeightOnAxle = Weight/Axles
     TE_Starting = WeightOnAxle*Adhesion
     
+    DPM = CONFIGURATION_DATA[59,number]
+    HEP = CONFIGURATION_DATA[60,number]
+    HEP_Subtract = CONFIGURATION_DATA[61,number]
+    HEPTYPE = CONFIGURATION_DATA[62,number]
+    
     UnitType = CONFIGURATION_DATA[58,number]
+
+    TransitionGroups = array(CONFIGURATION_DATA[69,number],CONFIGURATION_DATA[70,number],CONFIGURATION_DATA[71,number],CONFIGURATION_DATA[72,number])
+    TransitionShunts = array(CONFIGURATION_DATA[73,number],CONFIGURATION_DATA[74,number],CONFIGURATION_DATA[75,number],CONFIGURATION_DATA[76,number])    
+    TransitionVoltage = ( -(4*3000) - sqrt((4*3000)^2 - 4*4*746*Horsepower) )/(2*-4)
+    TransitionNotches = TransitionGroups:count() 
+    
+    for(N=1,TransitionNotches-1){
+        TransitionThresholds[N+1,number] = TransitionVoltage*TopSpeed/(3000*TransitionShunts[N+1,number]*TransitionGroups[N+1,number])
+    }
+    
     
     HasPM = (UnitType==0) | (UnitType==2)
     HasTM = (UnitType==0) | (UnitType==1)
@@ -203,38 +224,72 @@ V = -E:velL():z()
 MPH = toUnit("mph",abs(V))*4/3
 KPH = toUnit("km/h",abs(V))*4/3
 
-local DynamicsMode = CONFIGURATION_DATA[77,number]
+local DynamicsMode = CONFIGURATION_DATA[79,number]
 local HasSelector = CONFIGURATION_DATA[2,number]
+local TransitionMode = CONFIGURATION_DATA[82,number] #0 Manual, 1 Automatic with Selector, 2 Full Automatic
 
-if(HasSelector){
-    if(CONTROL_STAND_DATA[29,number] == 0){
-        CircuitType = 0
-        FieldShunt = 1
-    }
-    elseif(CONTROL_STAND_DATA[29,number] == 1){
-        CircuitType = CONFIGURATION_DATA[69,number]
-        FieldShunt = CONFIGURATION_DATA[73,number]
-    }
-    elseif(CONTROL_STAND_DATA[29,number] == 2){
-        CircuitType = CONFIGURATION_DATA[70,number]
-        FieldShunt = CONFIGURATION_DATA[74,number]
-    }
-    elseif(CONTROL_STAND_DATA[29,number] == 3){
-        CircuitType = CONFIGURATION_DATA[71,number]
-        FieldShunt = CONFIGURATION_DATA[75,number]
-    }
-    elseif(CONTROL_STAND_DATA[29,number] == 4){
-        CircuitType = CONFIGURATION_DATA[72,number]
-        FieldShunt = CONFIGURATION_DATA[76,number]
-    }
-    elseif(CONTROL_STAND_DATA[29,number] == 5){
-        CircuitType = 4
-        FieldShunt = 1
+if(TransitionMode == 0){
+    if(HasSelector){
+        if(CONTROL_STAND_DATA[29,number] == 0){
+            CircuitType = 0
+            FieldShunt = 1
+        }
+        elseif(CONTROL_STAND_DATA[29,number]>0){
+            CircuitType = TransitionGroups[CONTROL_STAND_DATA[29,number],number]
+            FieldShunt = TransitionShunts[CONTROL_STAND_DATA[29,number],number]
+        }
+        elseif(CONTROL_STAND_DATA[29,number] == -1){
+            CircuitType = TransitionGroups[1,number]
+            FieldShunt = TransitionShunts[1,number]
+        }
     }
 }
-else{
-    CircuitType = 4
-    FieldShunt = 1
+elseif(TransitionMode == 1){
+    if(HasSelector){
+        if(CONTROL_STAND_DATA[29,number] == 0){
+            CircuitType = 0
+            FieldShunt = 1
+            TransitionNumber = 0
+        }
+        elseif(CONTROL_STAND_DATA[29,number] != 0){
+            TransitionNumber = 1
+            
+            if(TransitionNumber < 4){
+                if(MPH > TransitionThresholds[TransitionNumber+1,number]){
+                    TransitionNumber += 1
+                }
+            }
+            
+            if(TransitionNumber > 1){
+                if(MPH <= TransitionThresholds[TransitionNumber,number]){
+                    TransitionNumber -= 1
+                }
+            }
+            
+            CircuitType = TransitionGroups[TransitionNumber,number]
+            FieldShunt = TransitionShunts[TransitionNumber,number]
+        }
+    }
+}
+elseif(TransitionMode == 2){
+    if(!HasSelector){
+        TransitionNumber = 1
+        
+        if(TransitionNumber < 4){
+            if(MPH > TransitionThresholds[TransitionNumber+1,number]){
+                TransitionNumber += 1
+            }
+        }
+        
+        if(TransitionNumber > 1){
+            if(MPH <= TransitionThresholds[TransitionNumber,number]){
+                TransitionNumber -= 1
+            }
+        }
+        
+        CircuitType = TransitionGroups[TransitionNumber,number]
+        FieldShunt = TransitionShunts[TransitionNumber,number]
+    }
 }
 
 if(HasPM){
@@ -270,48 +325,104 @@ elseif(!HasPM & HasTM){
     RampedMotorVoltage = CONTROL_STAND_DATA[34,number]
 }
 
+local HEP_Up = CONTROL_STAND_DATA[35,number]
+local HEP_Dn = CONTROL_STAND_DATA[35,number]
+
+if(HEP & (CONTROL_STAND_DATA[16,number] == 0) & (CONTROL_STAND_DATA[18,number] == 0)){
+    if(HEP_Up & !HEPQ & (HEP_Notch<2)){
+        HEPQ = 1
+        HEP_Notch++
+    }
+    elseif(HEP_Dn & !HEPQ & (HEP_Notch>0)){
+        HEPQ = 1
+        HEP_Notch--
+    }
+    elseif(!HEP_Up & !HEP_Dn & HEPQ){
+        HEPQ = 0
+    }
+}
+        
+Horsepower = HEP_Notch ? (Horsepower-HEP_Subtract) : Horsepower
+
+local BlendedBraking = CONFIGURATION_DATA[81,number]
+local BatteryKnife = CONTROL_STAND_DATA[19,number]
+local Notch = CONTROL_STAND_DATA[18,number]
+local Isolation = CONTROL_STAND_DATA[24,number]
+local GenField = CONTROL_STAND_DATA[21,number]
+local Reverser = CONTROL_STAND_DATA[16,number]
+local DynamicNotch = CONTROL_STAND_DATA[12,number]
+local DynamicPowerZone = CONTROL_STAND_DATA[14,number]
+local EMRGBrake = CONTROL_STAND_DATA[11,number]
+local AutomaticBrakeCutout = CONTROL_STAND_DATA[7,number]
+local BrakeNotch = CONTROL_STAND_DATA[3,number]
+local SelectorNotch = CONTROL_STAND_DATA[29,number]
+
 if(HasTM){
-    if(HasSelector == 0){
-        if(CONTROL_STAND_DATA[19,number] == 1){
-            if(CONTROL_STAND_DATA[21,number] == 1){
-                if(CONTROL_STAND_DATA[24,number] == 1){
-                    if(CONTROL_STAND_DATA[16,number] != 0){
-                        if(CONTROL_STAND_DATA[12,number] == 0){
-                            if(CONTROL_STAND_DATA[18,number]>0){
-                                local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
-                                CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
-                                R = RampedMotorVoltage/CurrentNR
-                                
-                                if(!MotorShort & !GroundRelay){
-                                    CurrentBO = (CurrentNR/R)*FieldShunt
-                                }
-                                elseif(MotorShort | GroundRelay){
-                                    CurrentBO = 0
-                                }
-                            }
-                            elseif(CONTROL_STAND_DATA[18,number] == 0){
-                                CurrentBO = 0    
-                            }
+    if(BatteryKnife & Isolation & GenField){
+        if(Reverser != 0){
+            if(Notch > 0 & !DynamicNotch){ #Power
+                if(!HasSelector){
+                    local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
+                    CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
+                    R = RampedMotorVoltage/CurrentNR
+                    
+                    if(!MotorShort & !GroundRelay){
+                        CurrentBO = (CurrentNR/R)*FieldShunt
+                    }
+                    elseif(MotorShort | GroundRelay){
+                        CurrentBO = 0
+                    }   
+                }
+                else{
+                    if(SelectorNotch > 0){
+                        local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
+                        CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
+                        R = RampedMotorVoltage/CurrentNR
+                        
+                        if(!MotorShort & !GroundRelay){
+                            CurrentBO = (CurrentNR/R)*FieldShunt
                         }
-                        elseif(CONTROL_STAND_DATA[12,number] == 2){
-                            if(CONTROL_STAND_DATA[18,number] == 0){
-                                if(DynamicsMode>0){
-                                    Dynamics = 1
-                                    local GRID_RESISTOR_OHMS = 0.923
-                                    local WheelDiameter = 40
-                                    local WheelCircumference = WheelDiameter*pi()
-                                    local IPH = MPH*(12*5280)
-                                    local AxleRPM = (IPH/60)/WheelCircumference
-                                    
-                                    CEMF = 0+(MPH/TopSpeed)
-                                    
-                                    local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*CONTROL_STAND_DATA[14,number])*100
-                                    local DBMotorCurrent = ((DBMotorVoltage-CircuitType) * CEMF)*FieldShunt
-                                    
-                                    if(!DynamicShort & !GroundRelay){
-                                        CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
+                        elseif(MotorShort | GroundRelay){
+                            CurrentBO = 0
+                        }   
+                    }
+                    else{
+                        CurrentBO = 0
+                    }
+                }                 
+            }
+            elseif(Notch == 0){ #Dynamics
+                if(DynamicsMode > 0){
+                    if(BlendedBraking & !DynamicNotch){ #Blended Braking
+                        if(!HasSelector){
+                            if(!EMRGBrake){
+                                if(AutomaticBrakeCutout > 0){
+                                    if(LOCOMOTIVE_AIRBRAKE_DATA[2,number] < FeedPressure){
+                                        if(BrakeNotch > 0){
+                                            Dynamics = 1
+                                            local GRID_RESISTOR_OHMS = 0.923
+                                            local WheelDiameter = 40
+                                            local WheelCircumference = WheelDiameter*pi()
+                                            local IPH = MPH*(12*5280)
+                                            local AxleRPM = (IPH/60)/WheelCircumference
+
+                                            CEMF = (MPH/TopSpeed)
+                                            
+                                            local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*((FeedPressure/LOCOMOTIVE_AIRBRAKE_DATA[2,number])*30))*100
+                                            local DBMotorCurrent = ((DBMotorVoltage-CircuitType)*CEMF)*FieldShunt
+                                            
+                                            if(!DynamicShort & !GroundRelay){
+                                                CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
+                                            }
+                                            elseif(DynamicShort | GroundRelay){
+                                                CurrentBO = 0
+                                            }
+                                        }
+                                        else{
+                                            CurrentBO = 0
+                                        }
                                     }
-                                    elseif(DynamicShort | GroundRelay){
+                                    else{
                                         CurrentBO = 0
                                     }
                                 }
@@ -320,103 +431,47 @@ if(HasTM){
                                 }
                             }
                         }
-                        elseif(CONTROL_STAND_DATA[12,number]<2){
-                            CurrentBO = 0       
-                        }
-                    }
-                    else{
-                        CurrentBO = 0  
-                        Current = 0     
-                        TE = 0
                     }
                 }
-                else{
+                
+                if(DynamicNotch == 0){
                     CurrentBO = 0  
                     Current = 0     
-                    TE = 0
+                    TE = 0   
                 }
             }
             else{
-                CurrentBO = 0  
-                Current = 0     
-                TE = 0
-            }
-        }
-        else{
-            CurrentBO = 0  
-            Current = 0     
-            TE = 0
-        }
-    }
-    elseif(HasSelector == 1){
-        if(CONTROL_STAND_DATA[19,number] == 1){
-            if(CONTROL_STAND_DATA[21,number] == 1){
-                if(CONTROL_STAND_DATA[24,number] == 1){
-                    if(CONTROL_STAND_DATA[16,number] != 0){
-                        if(CONTROL_STAND_DATA[29,number] > 0){
-                            if(CONTROL_STAND_DATA[18,number]>0){
-                                local CurrentNR = (RampedMotorVoltage - (CircuitType*CEMF))
-                                CEMF = 5+(MPH/(Horsepower/MaxGeneratorCurrent))
-                                R = RampedMotorVoltage/CurrentNR
-                                
-                                if(!MotorShort & !GroundRelay){
-                                    CurrentBO = (CurrentNR/R)*FieldShunt
-                                }
-                                elseif(MotorShort | GroundRelay){
-                                    CurrentBO = 0
-                                }
-                            }
-                            elseif(CONTROL_STAND_DATA[18,number] == 0){
-                                CurrentBO = 0    
-                            }
+                if(DynamicsMode > 0){
+                    if(DynamicNotch == 2){ #Normal Dynamics
+                        Dynamics = 1
+                        local GRID_RESISTOR_OHMS = 0.923
+                        local WheelDiameter = 40
+                        local WheelCircumference = WheelDiameter*pi()
+                        local IPH = MPH*(12*5280)
+                        local AxleRPM = (IPH/60)/WheelCircumference
+                        
+                        CEMF = (MPH/TopSpeed)
+                        
+                        local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*DynamicPowerZone)*100
+                        local DBMotorCurrent = ((DBMotorVoltage-4)*CEMF)*1
+                        
+                        if(!DynamicShort & !GroundRelay){
+                            CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
                         }
-                        elseif(CONTROL_STAND_DATA[29,number] == 5){
-                            if(DynamicsMode>0){
-                                Dynamics = 1
-                                local GRID_RESISTOR_OHMS = 0.923
-                                local WheelDiameter = 40
-                                local WheelCircumference = WheelDiameter*pi()
-                                local IPH = MPH*(12*5280)
-                                local AxleRPM = (IPH/60)/WheelCircumference
-        
-                                CEMF = 0+(MPH/TopSpeed)
-                                
-                                local DBMotorVoltage = ((AxleRPM/MaxDynamicCurrent)*(CONTROL_STAND_DATA[18,number]*10))*100
-                                local DBMotorCurrent = ((DBMotorVoltage-CircuitType) * CEMF)*FieldShunt
-                                
-                                if(!DynamicShort & !GroundRelay){
-                                    CurrentBO = -(DBMotorCurrent/(GRID_RESISTOR_OHMS))*2.5
-                                }
-                                elseif(DynamicShort | GroundRelay){
-                                    CurrentBO = 0
-                                }
-                            }
-                            else{
-                                CurrentBO = 0
-                            }
-                        }
-                        elseif(CONTROL_STAND_DATA[29,number] == 0){
+                        elseif(DynamicShort | GroundRelay){
                             CurrentBO = 0
-                            Current = 0 
-                            TE = 0
-                        }
-                    }
-                    else{
-                        CurrentBO = 0  
-                        Current = 0     
-                        TE = 0
+                        }         
                     }
                 }
                 else{
+                    CurrentBO = 0 
+                }
+                
+                if(DynamicNotch != 2){
                     CurrentBO = 0  
                     Current = 0     
-                    TE = 0
+                    TE = 0    
                 }
-            }
-            else{
-                CurrentBO = 0  
-                Current = 0     
-                TE = 0
             }
         }
         else{
@@ -425,17 +480,29 @@ if(HasTM){
             TE = 0
         }
     }
+    else{
+        CurrentBO = 0  
+        Current = 0     
+        TE = 0
+    }
+}
+else{
+    CurrentBO = 0  
+    Current = 0     
+    TE = 0
 }
 
-if(inrange(CurrentBO,-MaxDynamicCurrent,MaxTractionMotorCurrent)){
-    Current = CurrentBO  
+if(Dynamics == 1 & DynamicNotch < 2){
+    Dynamics = 0    
 }
-elseif(CurrentBO>MaxTractionMotorCurrent){
-    Current = MaxTractionMotorCurrent
+
+if(DynamicNotch > 0 & DynamicPowerZone == 0){
+    CurrentBO = 0
+    Current = 0     
+    TE = 0
 }
-elseif(CurrentBO<-MaxDynamicCurrent){
-    Current = -MaxDynamicCurrent
-}
+
+Current = clamp(CurrentBO,-MaxDynamicCurrent,MaxTractionMotorCurrent)
 
 if(CONTROL_STAND_DATA[16,number] != 0){
     if(CONTROL_STAND_DATA[12,number]>0){
@@ -450,6 +517,7 @@ if(CONTROL_STAND_DATA[16,number] != 0){
                     DBArking = 1
                     if(changed(DBArking)&DBArking){
                         soundPlay("DB-Arking",0,"gsgtrainsounds/misc/electrical_arking.wav")
+                        soundPlay(0,4.2,"ambient/alarms/alarm_citizen_loop1.wav")
                         print("Warning your Dynmaics becoming overheated! Reduce your dynmaics to: "+MaxContinuousDynamicCurrent+" Amps or further damage will occour.")
                     }
                 }
@@ -477,13 +545,14 @@ if(CONTROL_STAND_DATA[16,number] != 0){
         if(CONTROL_STAND_DATA[18,number]>0){
             if(!MotorShort){
                 if(Current>MaxContinuousTractionMotorCurrent){
-                    MotorTemp += (Current/1000)
+                    MotorTemp += ((Current/1000)/4)
                 }
     
                 if(MotorTemp>1000 & MotorTemp<1500){
                     TMArking = 1
                     if(changed(TMArking)&TMArking){
                         soundPlay("TM-Arking",0,"gsgtrainsounds/misc/electrical_arking.wav")
+                        soundPlay(0,4.2,"ambient/alarms/alarm_citizen_loop1.wav")
                         print("Warning your Traction Motors becoming overheated! Reduce your throttle to: "+MaxContinuousTractionMotorCurrent+" Amps or further damage will occour.")
                     }
                 }
@@ -508,7 +577,7 @@ soundVolume("TM-Arking",((MotorTemp-1000)/300))
 
 if(Current>-MaxContinuousDynamicCurrent){
     if(round(DynamicTemp)>0){
-        DynamicTemp -= (CONTROL_STAND_DATA[12,number] ? 5 : 2)
+        DynamicTemp -= (CONTROL_STAND_DATA[12,number] ? 0.5 : 0.25)
     }
     if(DynamicTemp<0){
         DynamicTemp = 0
@@ -565,7 +634,7 @@ if(CONTROL_STAND_DATA[7,number] == 1){
                 BEAuto = ((round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])-(FeedPressure))*(AutoMux ? 0 : 150000))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
             }
             elseif(MaxTrainBrakeForce>0){
-                BEAuto = ((1+MaxTrainBrakeForce)*(round(LOCOMOTIVE_AIRBRAKE_DATA[3,number])-(FeedPressure))*(AutoMux ? 0 : 40))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
+                BEAuto = ((MaxTrainBrakeForce)*(round(1+LOCOMOTIVE_AIRBRAKE_DATA[3,number])-(FeedPressure))*(AutoMux ? 0 : 40))/(CONTROL_STAND_DATA[6,number] ? 2.5 : 1.45)
             }
         }
         else{
@@ -619,35 +688,10 @@ if(clk("fixnil")){
     stoptimer("fixnil")
 }
 
-if(FixNils){
-    local Curve = CONFIGURATION_DATA[79,number]
-    local LowSpeedCurveEnable = CONFIGURATION_DATA[78,number]
-    
-    if(LowSpeedCurveEnable == 1){
-        if(Dynamics == 0){
-            LowSpeedCurve = clamp(Current,Load-3,Load+3)
-        }
-        elseif(Dynamics == 1){
-            LowSpeedCurve = Curve
-        }
-        
-        if(LowSpeedCurve > 300){
-            LowSpeedCurve = 300
-        }
-    }
-    else{
-        LowSpeedCurve = Curve
-    }
-    
-    Load = clamp(Current,Load-(Curve),Load+(LowSpeedCurve/(Dynamics ? 1 : 10)))
-    TE_EffectiveLoad = Load/(1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-(FeedPressure)))/(FeedPressure)))
-    TE_Effective = TE_EffectiveLoad
-}
-
 if(changed(CONTROL_STAND_DATA[30,number])&CONTROL_STAND_DATA[30,number] & !Sander){
     Sander = 1
 }
-elseif(changed(CONTROL_STAND_DATA[30,number])&CONTROL_STAND_DATA[30,number] & Sander){
+elseif(changed(CONTROL_STAND_DATA[30,number])&!CONTROL_STAND_DATA[30,number] & Sander){
     Sander = 0
 }
 
@@ -665,30 +709,75 @@ else{
     Sanding = 1
 }
 
+if(changed(Sanding)&Sanding){
+    soundPlay("sander",0,CONFIGURATION_DATA[83,string])
+}
+
+if(changed(Sanding)&!Sanding){
+    soundStop("sander")
+    soundPlay("sander",0,CONFIGURATION_DATA[84,string])    
+}
+
 local FrictionCoefficient = (Sanding ? 1 : getWeatherCondition())
 local InperfectionFactor = 1.5
-local SlipCoefficient = TE_Effective/WeightOnAxle*(TrainWeight/WeightOnAxle)
+local SlipCoefficient = TE_Effective/WeightOnAxle*((TrainWeight/2)/((1+Load)*85)) 
 local FrictionFactor = (1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-(FeedPressure)))/(FeedPressure)))
-SlippingFactor = ((SlipCoefficient/(FrictionFactor^2))/(1+((MPH/BaseSpeed)/10)))*(random()*InperfectionFactor)
+SlippingFactor = ((SlipCoefficient/(FrictionFactor^2))/(1+((MPH/TopSpeed)/10)))*(random()*InperfectionFactor)
 
 if(!MotorShort){
     if(Current>0){
         if(SlippingFactor > FrictionCoefficient){
             WheelSlip = 1
-            Load = (Load-randint(0,Load))
+            LoadAfterSlip = (Load-randint(0,Load))
         }
         elseif(SlippingFactor < FrictionCoefficient){
             WheelSlip = 0
+            LoadAfterSlip = Load
         }
     }
+    else{
+        WheelSlip = 0
+        LoadAfterSlip = Load
+    }
+}
+else{
+    WheelSlip = 0
+    LoadAfterSlip = Load    
 }
 
 if(changed(WheelSlip)&WheelSlip){
     W:soundPlay("wheelsliploop",0,CONFIGURATION_DATA[56,string])
 }
-elseif(changed(WheelSlip)&!WheelSlip){
+
+if(changed(WheelSlip)&!WheelSlip){
     soundStop("wheelsliploop")
     W:soundPlay("wheelslipend",0,CONFIGURATION_DATA[57,string])
+}
+
+
+if(FixNils){
+    local Curve = CONFIGURATION_DATA[79,number]
+    local LowSpeedCurveEnable = CONFIGURATION_DATA[80,number]
+    
+    if(LowSpeedCurveEnable == 1){
+        if(Dynamics == 0){
+            LowSpeedCurve = clamp(Current,LowSpeedCurve-Curve,LowSpeedCurve+2)
+        }
+        elseif(Dynamics == 1){
+            LowSpeedCurve = Curve*10
+        }
+        
+        if(LowSpeedCurve >= Curve*10){
+            LowSpeedCurve = Curve*10
+        }
+    }
+    else{
+        LowSpeedCurve = Curve*10
+    }
+    
+    Load = clamp(Current,Load-(Curve),Load+(abs(LowSpeedCurve/10)))
+    TE_EffectiveLoad = LoadAfterSlip/(1+(round(-(LOCOMOTIVE_AIRBRAKE_DATA[3,number]-(FeedPressure)))/(FeedPressure)))
+    TE_Effective = TE_EffectiveLoad
 }
 
 if(CONTROL_STAND_DATA[21,number]){
@@ -698,17 +787,17 @@ else{
     TotalMotors = Motors
 }
 
-if(MPH > BaseSpeed){
+if(MPH > TopSpeed){
     TE = 0  
 }
-elseif(MPH < BaseSpeed){
+elseif(MPH < TopSpeed){
     if(CONTROL_STAND_DATA[12,number] == 2){
-        DynoHPINCR = 1.5
+        DynoHPINCR = 1.8
     }
     elseif(CONTROL_STAND_DATA[12,number]<2){
-        DynoHPINCR = 1
+        DynoHPINCR = 1.8
     }
-    TE = (TE_Effective*(BaseSpeed/TopSpeed)*TotalMotors*MaxGeneratorCurrent/8)*(1*DynoHPINCR)
+    TE = (TE_Effective*(BaseSpeed/TopSpeed)*TotalMotors*MaxGeneratorCurrent/8)*(0.85*DynoHPINCR)*((0.25+clamp(MPH,0,15)/15)/LSX)
 }
 
 if(BHQ){
@@ -725,14 +814,37 @@ elseif(Dynamics == 1){
     TELocal = TE*sign(V)
 }
 
-BEForce = BEF + BEAutoF
+if(MPH>=0.5){
+    BEForce = BEF + BEAutoF
+    
+    if(abs(BEF)>0){
+        Braking_Loco = 1
+    }
+    elseif(abs(BEF)<=0){
+        Braking_Loco = 0
+    }
+    
+    if(abs(BEAutoF)>0){
+        Braking_Train = 1
+    }
+    elseif(abs(BEAutoF)<=0){
+        Braking_Train = 0
+    }
+}
+
+if(MPH<0.5){
+    BEForce = 0 
+    Braking_Loco = 0
+    Braking_Train = 0
+}
+
 Force = TELocal - (BEForce*sign(V))
 
 if(HasTM){
     W:applyForce(-E:up()*(Force/5))
 }
 
-LOCOMOTIVE_PROCESSOR = array(CarCount,Load,MPH,TrainWeight,Braking_Loco,Braking_Train,V,E,O,W,DynamicTemp,MotorTemp,DynamicShort,MotorShort,GroundRelay,DynamicBrakeWarning,WheelSlip,
-Motors,RampedMotorVoltage)
+LOCOMOTIVE_PROCESSOR = array(CarCount,LoadAfterSlip,MPH,TrainWeight,Braking_Loco,Braking_Train,V,E,O,W,DynamicTemp,MotorTemp,DynamicShort,MotorShort,GroundRelay,DynamicBrakeWarning,WheelSlip,
+Motors,RampedMotorVoltage,HEP_Notch,EngineRPMSmoothed)
 
 

@@ -20,12 +20,12 @@ if(first() | dupefinished()){
     MaximumGenCurrent = 3000 # Find this in your PT chip
     DPM = 0 # Is it dual prime mover?
     
-    ForcedInductionType = 2 # 1 supercharged, 2 turbocharged, 3 disengaging superturbocharger
-    SuperTurboChargerNotch = 4 # At what notch does the supercharger disengage? (usually 4)
+    ForcedInductionType = 0 # 1 supercharged, 2 turbocharged, 3 disengaging superturbocharger
+    SuperTurboChargerNotch = 0 # At what notch does the supercharger disengage? (usually 4)
     
     StartCleanliness = 3 # Cleanliness of the starting clag
     
-    IdleCleanliness = 7 # This is how clean the engine is when its not changing RPM or not being stressed by shifting load
+    IdleCleanliness = 6 # This is how clean the engine is when its not changing RPM or not being stressed by shifting load
     WorkingCleanliness = 4 # This is how clean the engine is when its being under shifting load or RPM
     
     # Particles can also be 'null' which won't play anything

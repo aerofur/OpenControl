@@ -30,6 +30,12 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Control Air
     * [x] MainRes "jump" on Bail
     * [x] Locomotive Brake res logic
+    * [x] Air Compressor Pitch up (runs on engine RPM)
+      * Base this off the Engine RPM calulations in the Electrical chip (send the engine RPM through the data array).
+    * [x] Emergency Braking
+    * [x] BP and Trainline "speeds" are now based on how many cars there are. 
+      * The more the slower it takes to reach the Feed Pressure.
+      * Also means that Emrg Braking takes longer
   * [ ] Physics System / Electrical
     * [x] Playerbased Speed and Physics Calculations
     * [x] MPH
@@ -37,17 +43,17 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] WheelSlip
       * [x] Reduce Current when WheelSlip occurs
       * [x] Map Weather Condition FETCH
-        * Not yet to be working (Needs lua?). Would set the Friction Coefficient depending on the rail conditions. Is set to 0.5 by default, if they were wet it would be 0.3. Applying sand would counteract this, and set it back 0.5.
+        * Not yet to be working (Needs lua?). Would set the Friction Coefficient depending on the rail conditions. Is set to 0.5 by default, if they were wet it would be 0.3. Applying sand would counteract this, and set it to 1.0.
     * [ ] Traction Control
-      * No Traction Control (Early)
-      * Automatic Power Reduction (Mid)
-      * Automatic Power Reduction and Sand (Late)
-      * Electronic Traction Control (Modern)
+      * [x] No Traction Control (Early)
+      * [ ] Automatic Power Reduction (Mid)
+      * [ ] Automatic Power Reduction and Sand (Late)
+      * [ ] Electronic Traction Control (Modern)
     * [x] Traction Motor Overheat
       * [x] Change overheating properties depending on Mechanically-Driven or Electrically-Driven Traction Motor Blowers. See Dynamic Modes.
     * [x] Dynamic Grid Overheat
     * [x] Sanders
-    * [ ] Slugs & Cab Units (Unit Types) -- // SEMI-UNTESTED //
+    * [x] Slugs & Cab Units (Unit Types)
       * [x] Locomotive
       * [x] Slug (No Prime Mover, has Traction Motors)
       * [x] Snail (No Traction Motors, has Prime Mover)
@@ -57,12 +63,15 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
     * [x] Transition Groups
     * [x] Transition Shunts
     * [x] Dynamic Modes
-      * Switch between either no Dynamics
+      * [x] No Dynamics
       * [x] Dynamic Brakes with Mechanically-Driven Traction Motor Blowers
       * [x] Dynamic Brakes with Electrically-Driven Traction Motor Blowers
-    * [ ] Blended Braking
+    * [x] Blended Braking
       * Modern Passenger Thing, turns on dynamic brakes when air brake application is made.
-    * [ ] Hend-End Power
+    * [x] Hend-End Power
+      * [x] HEP Up Input
+      * [x] HEP Down Input
+      * [x] Remove horsepower if HEP active (can be set in the config)
     * [x] Dual Prime Mover
     * [x] Primer / Starter Modes
       * [x] Manual Primer, Manual Start
@@ -70,34 +79,56 @@ This is a list of what we have to complete, fix, or build. *(These may be out of
       * [x] Fully Automatic Start
     * [ ] OverloadProtection
       * The locomotive will reduce power if thermal limits of the traction motors are exceeded.
-    * [ ] Adhesion
-      * Really worth adding? Wheelslip does its own thing, :thinking_emoji:
+    * [x] Adhesion
     * [x] Custom Load Ramping Speed
       * Will be located in configs, the default should be 15. (see clamps in TM Calc)
     * [x] Low Speed Curve Enable/Disable
     * [ ] Engine Sound Pitch Rise when in MU (Assign in the engine sound control chip)
+    * [ ] Cruise Control
+      * [ ] Dynamic Cruise Control
+      * [ ] Normal Cruise Control
+      * Not very keen on doing this.. (Would anyone use it? If its not used much; no point in adding it, wasted cpu time..?) If someone else would like to do it feel free to make a Pull Request, or [Contact me](https://www.titusstudios.net/contact)!
+    * [ ] Add Power to Weight Ratio Offset
+      * This will be set in the config, it can be set from 0 to anything you like.
+      * It will change how the electrical calculations calculate the tration motor amperates, and their respective "rates". Every Locomotive is different so some have a little more power, some have a little less.. This depends on weight, power, generators, cables, wear, etc.
+    * [ ] Change Engine Pitch slightly depending on load
+      * Cool Idea, could be cool, will test it and see how it turns out.
+      * This happens in real life, especially in wheel slip conditions.
   * [x] User Control
   * [ ] Chat Commands
-  * [ ] I/O
+    * [ ] Autostarting
+      * [ ] Single PM
+      * [ ] DPM
+    * [ ] Shutdown
+      * [ ] Single PM
+      * [ ] DPM
+    * [ ] Automatic Brake
+    * [ ] Locomotive Brake
+    * [ ] Notch
+    * [ ] Dynamics
+      * [ ] Dynamic Setup
+      * [ ] Dynamics Powerzone (if un-notched dynamics)
+    * [ ] Control individual units by their Roadnumber
+  * [x] I/O
     * [x] MU Hose Functionality
       * Convert automatic MU E2 to automatic air hose E2
     * [x] Handbrake
       * Make handbrake e2 that uses `eyeTrace()`, meaning you dont need to use buttons. (E to apply, Shift+E to release)
     * [x] Locomotive Fan E2
       * Adds working fans to the locomotive with sounds. This may be required to have on the locomotive for sounds, otherwise no dyno / fan sounds, etc.
-    * [ ] Outputs for External E2s
-  * [ ] Control Stand
+    * [x] Outputs for External E2s
+  * [x] Control Stand
     * [x] 26L Brake Control Logic
-    * [ ] Manual Selector
+    * [x] Manual Selector
+    * [x] Emrg Hotkey
+      * Press a key to activate the Emergency Brake, so you dont need to go through the whole braking process
   * [ ] Multiple Units
     * [x] AAR 27 Pin Standard
     * [x] Air System MU
     * [x] MU2A
     * [ ] MU Headlights
     * [x] MU Sanding
-  * [ ] Configs
-    * [ ] Engine Sound Config
-      * Needs to be moved from the Engine Sound Chip to the Config Chip (low priority)
+  * [x] Configs
   
   
 ## What can be Multi-Parented
@@ -111,6 +142,7 @@ Engine Sound Processor | ✔ |
 Locomotive Airbrakes Processor | ✔ | 
 Sound Processor | ✔ | 
 
+> NOTE: When installing, remember to rename the folder from "OpenControl-master" or whatever it is to just "OpenControl"
 
 ## How it all works
 
